@@ -3,404 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <title>Origen Coin</title>
-
+    <title>Origen Coin Premium</title>
     <link rel="stylesheet" href="style.css">
-
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
 
-    <!-- ========================= -->
-    <!-- LOGIN SCREEN -->
-    <!-- ========================= -->
     <div id="login-screen" class="screen active">
-
         <div class="auth-card">
-
             <div class="auth-logo-container">
                 <div class="cyber-coin-logo">O</div>
             </div>
-
             <h2>Origen Coin</h2>
-
-            <p>
-                Connect your wallet identity and start mining premium Origen rewards.
-            </p>
-
+            <p>Connect your Telebirr wallet account to mine coins and claim cash payouts.</p>
+            
             <div class="input-group">
-                <input
-                    type="text"
-                    id="login-name"
-                    placeholder="Full Name"
-                    autocomplete="off"
-                >
+                <input type="text" id="login-name" placeholder="Full Name" required>
             </div>
-
             <div class="input-group">
-                <input
-                    type="tel"
-                    id="login-phone"
-                    placeholder="Telebirr Number"
-                    autocomplete="off"
-                >
+                <input type="tel" id="login-phone" placeholder="Telebirr Number (e.g., 09...)" required>
             </div>
-
-            <button id="login-btn">
-                Enter Mining Hub
-            </button>
-
+            
+            <button id="login-btn">Enter Mining Hub</button>
         </div>
-
     </div>
 
-    <!-- ========================= -->
-    <!-- MAIN APP -->
-    <!-- ========================= -->
     <div id="app-container" class="hidden">
-
-        <!-- HEADER -->
+        
         <header class="app-header">
-
             <div class="user-meta">
-
                 <div class="avatar-icon">
-                    O
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                 </div>
-
-                <span id="user-display-name">
-                    Loading...
-                </span>
-
+                <span id="user-display-name">Miner Loading...</span>
             </div>
-
-            <span id="sync-status">
-                ● Cloud Synced
-            </span>
-
+            <span id="sync-status">● Secure Cloud Synced</span>
         </header>
 
-        <!-- CONTENT -->
         <main class="screen-content">
-
-            <!-- HOME -->
+            
             <section id="home-screen" class="app-section">
-
                 <div class="balance-wrapper">
-
-                    <p class="balance-label">
-                        TOTAL MINED BALANCE
-                    </p>
-
+                    <p class="balance-label">TOTAL MINED BALANCE</p>
                     <div class="main-balance">
-
-                        <div class="balance-coin-icon">
-                            O
-                        </div>
-
-                        <h1 id="coin-balance-display">
-                            0
-                        </h1>
-
+                        <svg class="balance-coin-icon" viewBox="0 0 24 24" width="40" height="40"><circle cx="12" cy="12" r="10" fill="#ffcc00"/><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" fill="#ff9900"/><text x="12" y="15.5" font-family="'Poppins'" font-weight="800" font-size="10" fill="#fff" text-anchor="middle">O</text></svg>
+                        <h1 id="coin-balance-display">0</h1>
                     </div>
-
                 </div>
-
-                <!-- COIN -->
+                
                 <div class="coin-stage" id="coin-stage">
-
                     <div id="tap-coin">
-                        <div class="coin-engraving">
-                            O
-                        </div>
+                        <div class="coin-engraving">O</div>
                     </div>
-
                 </div>
 
-                <!-- ENERGY -->
                 <div class="energy-box">
-
                     <div class="energy-text">
-
-                        <span>
-                            ⚡ Energy Capacity
-                        </span>
-
-                        <span>
-                            <strong id="tap-counter">
-                                0
-                            </strong>
-                            / 500 Taps
-                        </span>
-
+                        <span>⚡ Energy Capacity</span>
+                        <span><strong id="tap-counter">0</strong> / 500 Taps</span>
                     </div>
-
                     <div class="progress-bar">
                         <div id="progress-fill"></div>
                     </div>
-
                 </div>
-
             </section>
 
-            <!-- TASKS -->
             <section id="tasks-screen" class="app-section hidden">
-
                 <div class="section-title">
-
-                    <h2>
-                        Mining Tasks
-                    </h2>
-
-                    <p>
-                        Complete premium video quests to recharge your mining core.
-                    </p>
-
+                    <h2>Mining Tasks</h2>
+                    <p>Fulfill sequential video quests to restore your core coin capacitor.</p>
                 </div>
-
-                <div id="task-box" class="task-box">
-
-                </div>
-
+                <div id="task-box" class="task-box"></div>
             </section>
 
-            <!-- LEADERBOARD -->
             <section id="leaderboard-screen" class="app-section hidden">
-
                 <div class="section-title">
-
-                    <h2>
-                        Global Hall Of Fame
-                    </h2>
-
-                    <p>
-                        Top miners across the Origen ecosystem.
-                    </p>
-
+                    <h2>Global Hall of Fame</h2>
+                    <p>Live rankings recalculating automatically every 5 minutes</p>
                 </div>
-
                 <div class="leaderboard-wrapper">
-
                     <ol id="leaderboard-list"></ol>
-
                 </div>
-
             </section>
 
-            <!-- ACCOUNT -->
             <section id="account-screen" class="app-section hidden">
-
                 <div class="section-title">
-
-                    <h2>
-                        Financial Hub
-                    </h2>
-
-                    <p>
-                        Wallet identity and payout tracking.
-                    </p>
-
+                    <h2>Financial Hub</h2>
+                    <p>Manage your ecosystem balances and payout addresses.</p>
                 </div>
-
-                <!-- CARD -->
+                
                 <div class="telebirr-card">
-
                     <div class="card-top">
-
-                        <span class="card-brand">
-                            telebirr Pay
-                        </span>
-
+                        <span class="card-brand">telebirr Pay</span>
                         <div class="chip"></div>
-
                     </div>
-
                     <div class="card-holder">
-
-                        <p class="label">
-                            ACCOUNT HOLDER
-                        </p>
-
-                        <h3 id="acc-name">
-                            ---
-                        </h3>
-
+                        <p class="label">ACCOUNT HOLDER</p>
+                        <h3 id="acc-name">--- ---</h3>
                     </div>
-
                     <div class="card-bottom">
-
                         <div>
-
-                            <p class="label">
-                                WALLET NUMBER
-                            </p>
-
-                            <h3 id="acc-phone">
-                                ---
-                            </h3>
-
+                            <p class="label">WALLET PHONE NUMBER</p>
+                            <h3 id="acc-phone">09********</h3>
                         </div>
-
                     </div>
-
                 </div>
 
-                <!-- STATS -->
                 <div class="stats-grid">
-
                     <div class="stat-tile">
-
-                        <span>
-                            Accumulated Coins
-                        </span>
-
-                        <h2 id="acc-coins">
-                            0
-                        </h2>
-
+                        <span>Accumulated Coins</span>
+                        <h2 id="acc-coins">0</h2>
                     </div>
-
                     <div class="stat-tile premium">
-
-                        <span>
-                            Estimated Value
-                        </span>
-
-                        <h2>
-                            <span id="acc-money">
-                                0.00
-                            </span>
-
-                            <small>
-                                ETB
-                            </small>
-                        </h2>
-
+                        <span>Est. Payout Value</span>
+                        <h2><span id="acc-money">0.00</span> <small>ETB</small></h2>
                     </div>
-
                 </div>
-
             </section>
 
         </main>
 
-        <!-- NAVIGATION -->
         <nav class="bottom-nav">
-
             <button class="nav-btn active" data-target="home-screen">
-
-                <svg class="nav-svg" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-                </svg>
-
-                <span class="nav-text">
-                    Mine
-                </span>
-
+                <svg class="nav-svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <span class="nav-text">Tap</span>
             </button>
-
             <button class="nav-btn" data-target="tasks-screen">
-
-                <svg class="nav-svg" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M7 2v11h3v9l7-12h-4l4-8z"/>
-                </svg>
-
-                <span class="nav-text">
-                    Tasks
-                </span>
-
+                <svg class="nav-svg" viewBox="0 0 24 24"><path fill="currentColor" d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+                <span class="nav-text">Tasks</span>
             </button>
-
             <button class="nav-btn" data-target="leaderboard-screen">
-
-                <svg class="nav-svg" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M5 16L3 5h18l-2 11H5zm2 2h10v2H7z"/>
-                </svg>
-
-                <span class="nav-text">
-                    Ranks
-                </span>
-
+                <svg class="nav-svg" viewBox="0 0 24 24"><path fill="currentColor" d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.66 4.34 4.94c.74 1.21 1.89 2.1 3.29 2.4V18H7v2h10v-2h-3.63v-2.66c1.4-.3 2.55-1.19 3.29-2.4C19.08 11.66 21 9.55 21 7V7c0-1.1-.9-2-2-2zm-12 4H5V7h2v2zm12 0h-2V7h2v2z"/></svg>
+                <span class="nav-text">Ranks</span>
             </button>
-
             <button class="nav-btn" data-target="account-screen">
-
-                <svg class="nav-svg" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M21 7H3V5h18v2zm0 4H3v8h18v-8z"/>
-                </svg>
-
-                <span class="nav-text">
-                    Wallet
-                </span>
-
+                <svg class="nav-svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5s1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"/></svg>
+                <span class="nav-text">Wallet</span>
             </button>
-
         </nav>
 
     </div>
 
-    <!-- ========================= -->
-    <!-- GLOBAL MODAL -->
-    <!-- ========================= -->
-    <div id="global-modal" class="global-modal hidden">
-
-        <div class="modal-card">
-
-            <div id="modal-icon" class="modal-icon">
-                ⚡
-            </div>
-
-            <h2 id="modal-title">
-                Title
-            </h2>
-
-            <p id="modal-message">
-                Message
-            </p>
-
-            <button id="modal-btn">
-                Continue
-            </button>
-
-        </div>
-
-    </div>
-
-    <!-- ========================= -->
-    <!-- VPN LOCK -->
-    <!-- ========================= -->
-    <div id="vpn-overlay" class="vpn-overlay hidden">
-
-        <div class="vpn-card">
-
-            <div class="vpn-icon">
-                ⚠️
-            </div>
-
-            <h2>
-                TURN ON VPN
-            </h2>
-
-            <p>
-                To unlock global mining tasks:
-            </p>
-
-            <ul>
-                <li>1. Minimize the app</li>
-                <li>2. Turn ON your VPN</li>
-                <li>3. Return back to Origen Coin</li>
-            </ul>
-
-        </div>
-
-    </div>
-
     <script src="script.js"></script>
-
 </body>
 </html>
-```
