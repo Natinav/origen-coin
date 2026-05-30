@@ -1,977 +1,399 @@
-# UPDATED style.css
+/* GENERAL APP WRAPPER CONFIG */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    user-select: none;
+}
+
+body {
+    background: #090a10;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* UNIVERSAL STRUCTURAL UTILITY HIDDEN GATE */
+.hidden {
+    display: none !important;
+}
+
+/* PREMIUM INTERACTIVE LOGIN PANEL UI */
+.screen {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+}
+
+.auth-card {
+    background: linear-gradient(145deg, #121420, #1a1d2e);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 35px 25px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+}
+
+.auth-logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.cyber-coin-logo {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #ffcc00, #ff9900);
+    color: #fff;
+    font-size: 36px;
+    font-weight: 800;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 153, 0, 0.4);
+}
 
-Replace your ENTIRE current `style.css` with this:
-
-```css id="4abm8y"
-/* ================================================= */
-/* GLOBAL RESET */
-/* ================================================= */
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Poppins',sans-serif;
-    -webkit-tap-highlight-color:transparent;
-}
-
-html,
-body{
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#090a10;
-    color:#ffffff;
-}
-
-/* ================================================= */
-/* UTILITIES */
-/* ================================================= */
-
-.hidden{
-    display:none !important;
-}
-
-/* ================================================= */
-/* LOGIN SCREEN */
-/* ================================================= */
-
-.screen{
-    width:100%;
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:20px;
-}
-
-.auth-card{
-    width:100%;
-    max-width:420px;
-    background:linear-gradient(
-        145deg,
-        #111216,
-        #181b24
-    );
-
-    border:1px solid rgba(255,255,255,0.05);
-
-    border-radius:28px;
-
-    padding:35px 24px;
-
-    box-shadow:
-        0 25px 60px rgba(0,0,0,0.45);
-
-    text-align:center;
-}
-
-.auth-logo-container{
-    display:flex;
-    justify-content:center;
-    margin-bottom:24px;
-}
-
-.cyber-coin-logo{
-    width:80px;
-    height:80px;
-
-    border-radius:50%;
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffcc00,
-            #ff7b00
-        );
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    font-size:42px;
-    font-weight:800;
-
-    color:#fff;
-
-    box-shadow:
-        0 0 35px rgba(255,204,0,0.35);
-}
-
-.auth-card h2{
-    font-size:28px;
-    font-weight:800;
-    margin-bottom:10px;
-}
-
-.auth-card p{
-    color:#8a8f9d;
-    font-size:13px;
-    line-height:1.6;
-    margin-bottom:28px;
-}
-
-.input-group{
-    margin-bottom:18px;
-}
-
-.input-group input{
-    width:100%;
-
-    background:#0d0f15;
-
-    border:
-        1px solid rgba(255,255,255,0.08);
-
-    border-radius:16px;
-
-    padding:16px;
-
-    color:#fff;
-
-    font-size:14px;
-
-    outline:none;
-
-    transition:0.25s;
-}
-
-.input-group input:focus{
-    border-color:#ffcc00;
-
-    box-shadow:
-        0 0 15px rgba(255,204,0,0.15);
-}
-
-#login-btn{
-    width:100%;
-
-    border:none;
-
-    border-radius:16px;
-
-    padding:16px;
-
-    cursor:pointer;
-
-    background:
-        linear-gradient(
-            90deg,
-            #ffcc00,
-            #ff7b00
-        );
-
-    color:#111;
-
-    font-weight:800;
-
-    font-size:15px;
-
-    transition:0.2s;
-}
-
-#login-btn:active{
-    transform:scale(0.98);
-}
-
-/* ================================================= */
-/* MAIN APP */
-/* ================================================= */
-
-#app-container{
-    width:100%;
-    max-width:480px;
-
-    height:100dvh;
-
-    margin:auto;
-
-    background:#090a10;
-
-    position:relative;
-
-    overflow:hidden;
-
-    display:flex;
-    flex-direction:column;
-
-    border-left:
-        1px solid rgba(255,255,255,0.03);
-
-    border-right:
-        1px solid rgba(255,255,255,0.03);
-}
-
-/* ================================================= */
-/* HEADER */
-/* ================================================= */
-
-.app-header{
-    width:100%;
-
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-
-    padding:18px;
-
-    background:#111216;
-
-    border-bottom:
-        1px solid rgba(255,255,255,0.05);
-
-    z-index:5;
-}
-
-.user-meta{
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-.avatar-icon{
-    width:34px;
-    height:34px;
-
-    border-radius:50%;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffcc00,
-            #ff7b00
-        );
-
-    color:#111;
-
-    font-weight:800;
-}
-
-#user-display-name{
-    font-size:14px;
-    font-weight:600;
-}
-
-#sync-status{
-    font-size:11px;
-    font-weight:700;
-    color:#00ff88;
-}
-
-/* ================================================= */
-/* CONTENT */
-/* ================================================= */
-
-.screen-content{
-    flex:1;
-
-    overflow-y:auto;
-
-    overflow-x:hidden;
-
-    padding:20px;
-
-    padding-bottom:120px;
-}
-
-.app-section{
-    animation:fadeIn 0.25s ease;
-}
-
-@keyframes fadeIn{
-    from{
-        opacity:0;
-        transform:translateY(10px);
-    }
-
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-/* ================================================= */
-/* BALANCE */
-/* ================================================= */
-
-.balance-wrapper{
-    text-align:center;
-    margin-top:12px;
-}
-
-.balance-label{
-    color:#8a8f9d;
-    font-size:11px;
-    letter-spacing:2px;
-    font-weight:700;
-}
-
-.main-balance{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:12px;
-
-    margin-top:8px;
-}
-
-.balance-coin-icon{
-    width:42px;
-    height:42px;
-
-    border-radius:50%;
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffcc00,
-            #ff7b00
-        );
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    font-weight:800;
-    color:#fff;
-
-    box-shadow:
-        0 0 20px rgba(255,204,0,0.25);
-}
-
-#coin-balance-display{
-    font-size:42px;
-    font-weight:800;
-}
-
-/* ================================================= */
-/* COIN */
-/* ================================================= */
-
-.coin-stage{
-    width:100%;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    position:relative;
-
-    overflow:hidden;
-
-    margin:45px 0;
-}
-
-#tap-coin{
-    width:220px;
-    height:220px;
-
-    border-radius:50%;
-
-    background:
-        radial-gradient(
-            circle,
-            #ffe680 0%,
-            #ffcc00 50%,
-            #b37700 100%
-        );
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    cursor:pointer;
-
-    transition:0.08s;
-
-    box-shadow:
-        0 0 45px rgba(255,204,0,0.35),
-        inset 0 0 20px rgba(255,255,255,0.45);
-}
-
-#tap-coin:active{
-    transform:scale(0.95);
-}
-
-.coin-engraving{
-    font-size:110px;
-    font-weight:800;
-    color:#fff;
-
-    text-shadow:
-        0 5px 12px rgba(0,0,0,0.3);
-}
-
-/* ================================================= */
-/* FLOATING HIT TEXT */
-/* ================================================= */
-
-.floating-hit-text{
-    position:absolute;
-
-    color:#ffcc00;
-
-    font-size:24px;
-    font-weight:800;
-
-    pointer-events:none;
-
-    animation:floatUp 0.8s ease forwards;
-
-    z-index:100;
-}
-
-@keyframes floatUp{
-    0%{
-        opacity:1;
-        transform:
-            translateY(0)
-            scale(1);
-    }
-
-    100%{
-        opacity:0;
-        transform:
-            translateY(-80px)
-            scale(0.8);
-    }
-}
-
-/* ================================================= */
-/* ENERGY */
-/* ================================================= */
-
-.energy-box{
-    background:#111216;
-
-    border:
-        1px solid rgba(255,255,255,0.05);
-
-    border-radius:20px;
-
-    padding:18px;
-}
-
-.energy-text{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-
-    margin-bottom:10px;
-
-    font-size:13px;
-
-    color:#8a8f9d;
-}
-
-.energy-text strong{
-    color:#fff;
-}
-
-.progress-bar{
-    width:100%;
-    height:12px;
-
-    background:#181b24;
-
-    border-radius:999px;
-
-    overflow:hidden;
-}
-
-#progress-fill{
-    width:0%;
-
-    height:100%;
-
-    border-radius:999px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #ffcc00,
-            #ff7b00
-        );
-
-    transition:width 0.15s;
+.auth-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.auth-card p {
+    font-size: 13px;
+    color: #8a8f9d;
+    margin-bottom: 30px;
+    line-height: 1.5;
 }
 
-/* ================================================= */
-/* SECTIONS */
-/* ================================================= */
-
-.section-title{
-    margin-bottom:20px;
+.input-group {
+    margin-bottom: 18px;
 }
 
-.section-title h2{
-    font-size:24px;
-    font-weight:800;
+.input-group input {
+    width: 100%;
+    padding: 14px 20px;
+    background: #0d0f17;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
 }
 
-.section-title p{
-    color:#8a8f9d;
-    font-size:13px;
-    line-height:1.5;
-    margin-top:5px;
+.input-group input:focus {
+    border-color: #ffcc00;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.1);
 }
-
-/* ================================================= */
-/* TASKS */
-/* ================================================= */
 
-.task-box{
-    display:flex;
-    flex-direction:column;
-    gap:18px;
+#login-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(90deg, #ffcc00, #ff9900);
+    border: none;
+    border-radius: 14px;
+    color: #000;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
 }
-
-.task-card{
-    background:#111216;
-
-    border:
-        1px solid rgba(255,204,0,0.15);
-
-    border-radius:22px;
-
-    padding:22px;
 
-    overflow:hidden;
+#login-btn:active {
+    transform: scale(0.98);
 }
 
-.task-card h3{
-    font-size:17px;
-    font-weight:700;
-    margin-bottom:8px;
+/* PREMIUM WORKSPACE CONTAINER LAYOUT */
+#app-container {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    background: #090a10;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
-.task-card p{
-    color:#8a8f9d;
-    font-size:13px;
-    line-height:1.5;
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #0e101a;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
-.reward-tag{
-    margin-top:14px;
-
-    color:#ffcc00;
-
-    font-weight:700;
-    font-size:14px;
+.user-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
-
-.task-btn{
-    width:100%;
-
-    margin-top:18px;
-
-    border:none;
-
-    border-radius:16px;
-
-    padding:15px;
-
-    cursor:pointer;
 
-    background:
-        linear-gradient(
-            90deg,
-            #ffcc00,
-            #ff7b00
-        );
-
-    color:#111;
-
-    font-size:14px;
-    font-weight:800;
-
-    transition:0.2s;
+.avatar-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ffcc00;
 }
 
-.task-btn:active{
-    transform:scale(0.98);
+#user-display-name {
+    font-size: 14px;
+    font-weight: 600;
 }
-
-/* ================================================= */
-/* LEADERBOARD */
-/* ================================================= */
 
-.leaderboard-wrapper{
-    background:#111216;
-
-    border-radius:22px;
-
-    overflow:hidden;
-
-    border:
-        1px solid rgba(255,255,255,0.05);
+#sync-status {
+    font-size: 12px;
+    color: #00ff88;
+    font-weight: 600;
 }
 
-#leaderboard-list{
-    list-style:none;
+.screen-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    padding-bottom: 100px;
 }
-
-#leaderboard-list li{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-
-    padding:16px;
 
-    border-bottom:
-        1px solid rgba(255,255,255,0.04);
-
-    font-size:14px;
+/* MINING SYSTEM VIEW (TAP HUB) */
+.balance-wrapper {
+    text-align: center;
+    margin-top: 15px;
 }
-
-/* ================================================= */
-/* WALLET */
-/* ================================================= */
-
-.telebirr-card{
-    background:
-        linear-gradient(
-            135deg,
-            #1b4cff,
-            #002db3
-        );
-
-    border-radius:24px;
 
-    padding:24px;
-
-    margin-top:18px;
-
-    box-shadow:
-        0 15px 35px rgba(0,45,179,0.3);
+.balance-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #8a8f9d;
+    font-weight: 600;
 }
 
-.card-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.main-balance {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 5px;
 }
 
-.card-brand{
-    font-size:18px;
-    font-weight:800;
+#coin-balance-display {
+    font-size: 38px;
+    font-weight: 800;
 }
-
-.chip{
-    width:42px;
-    height:28px;
-
-    border-radius:6px;
 
-    background:
-        linear-gradient(
-            135deg,
-            #ffe680,
-            #d4af37
-        );
+.coin-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 40px 0;
+    position: relative;
 }
 
-.card-holder{
-    margin:28px 0 16px;
+#tap-coin {
+    width: 210px;
+    height: 210px;
+    background: radial-gradient(circle, #ffe680 0%, #ffcc00 50%, #b38600 100%);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 35px rgba(255, 204, 0, 0.35), inset 0 0 15px rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: transform 0.05s ease-in-out;
 }
 
-.label{
-    font-size:10px;
-    letter-spacing:1px;
-
-    color:rgba(255,255,255,0.7);
+#tap-coin:active {
+    transform: scale(0.95);
 }
-
-.card-holder h3,
-.card-bottom h3{
-    margin-top:5px;
 
-    font-size:17px;
-    font-weight:600;
+.coin-engraving {
+    font-size: 100px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.25);
 }
-
-/* ================================================= */
-/* STATS */
-/* ================================================= */
-
-.stats-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:16px;
 
-    margin-top:22px;
+/* ENERGY METER MODULE */
+.energy-box {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 16px;
 }
 
-.stat-tile{
-    background:#111216;
-
-    border-radius:20px;
-
-    padding:18px;
-
-    border:
-        1px solid rgba(255,255,255,0.05);
+.energy-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #8a8f9d;
+    margin-bottom: 8px;
 }
 
-.stat-tile span{
-    color:#8a8f9d;
-    font-size:12px;
+.energy-text strong {
+    color: #fff;
 }
-
-.stat-tile h2{
-    margin-top:8px;
 
-    font-size:22px;
-    font-weight:800;
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: #161824;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
-.stat-tile.premium h2{
-    color:#00ff88;
+#progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ffcc00, #ffaa00);
+    border-radius: 10px;
+    transition: width 0.1s ease;
 }
 
-.stat-tile small{
-    font-size:12px;
-    color:#8a8f9d;
+/* SECTIONS COMMON CONFIG */
+.section-title h2 {
+    font-size: 22px;
+    font-weight: 700;
 }
 
-/* ================================================= */
-/* BOTTOM NAV */
-/* ================================================= */
-
-.bottom-nav{
-    position:absolute;
-
-    bottom:0;
-    left:0;
-
-    width:100%;
-
-    height:78px;
-
-    background:#111216;
-
-    border-top:
-        1px solid rgba(255,255,255,0.05);
-
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-
-    z-index:20;
+.section-title p {
+    font-size: 13px;
+    color: #8a8f9d;
+    margin-top: 4px;
+    line-height: 1.4;
 }
 
-.nav-btn{
-    border:none;
-    background:none;
-
-    color:#5f6574;
-
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-
-    gap:5px;
-
-    cursor:pointer;
-
-    transition:0.2s;
+/* FINANCIAL CARD PREMIUM UI */
+.telebirr-card {
+    background: linear-gradient(135deg, #1a52ff 0%, #002db3 100%);
+    padding: 22px;
+    border-radius: 20px;
+    margin-top: 20px;
+    box-shadow: 0 10px 25px rgba(0, 45, 179, 0.3);
 }
 
-.nav-svg{
-    width:22px;
-    height:22px;
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.nav-text{
-    font-size:11px;
-    font-weight:700;
+.card-brand {
+    font-weight: 800;
+    font-size: 18px;
+    font-style: italic;
+    color: #fff;
 }
 
-.nav-btn.active{
-    color:#ffcc00;
+.chip {
+    width: 38px;
+    height: 28px;
+    background: linear-gradient(135deg, #ffea9f, #d4af37);
+    border-radius: 6px;
 }
-
-/* ================================================= */
-/* GLOBAL MODAL */
-/* ================================================= */
-
-.global-modal{
-    position:fixed;
-    inset:0;
-
-    background:rgba(0,0,0,0.72);
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
 
-    z-index:500;
+.card-holder {
+    margin: 25px 0 15px 0;
 }
 
-.modal-card{
-    width:90%;
-    max-width:360px;
-
-    background:#111216;
-
-    border:
-        1px solid rgba(255,204,0,0.18);
-
-    border-radius:28px;
-
-    padding:30px 24px;
-
-    text-align:center;
-
-    animation:modalPop 0.25s ease;
+.label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
 }
 
-@keyframes modalPop{
-    from{
-        opacity:0;
-        transform:scale(0.9);
-    }
-
-    to{
-        opacity:1;
-        transform:scale(1);
-    }
+.card-holder h3, .card-bottom h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
 }
 
-.modal-icon{
-    font-size:46px;
-    margin-bottom:15px;
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
 }
 
-#modal-title{
-    font-size:24px;
-    font-weight:800;
-    margin-bottom:10px;
+.stat-tile {
+    background: #121420;
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 16px;
+    border-radius: 16px;
 }
 
-#modal-message{
-    color:#8a8f9d;
-    line-height:1.6;
-    font-size:14px;
+.stat-tile span {
+    font-size: 12px;
+    color: #8a8f9d;
 }
-
-#modal-btn{
-    width:100%;
 
-    margin-top:22px;
-
-    border:none;
-
-    border-radius:16px;
-
-    padding:15px;
-
-    cursor:pointer;
-
-    background:
-        linear-gradient(
-            90deg,
-            #ffcc00,
-            #ff7b00
-        );
-
-    color:#111;
-
-    font-size:14px;
-    font-weight:800;
+.stat-tile h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 4px;
 }
-
-/* ================================================= */
-/* VPN OVERLAY */
-/* ================================================= */
 
-.vpn-overlay{
-    position:fixed;
-    inset:0;
-
-    background:rgba(9,10,16,0.98);
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    z-index:1000;
-
-    padding:20px;
+.stat-tile.premium h2 {
+    color: #00ff88;
 }
-
-.vpn-card{
-    width:100%;
-    max-width:360px;
-
-    background:#111216;
-
-    border:
-        2px solid rgba(255,204,0,0.4);
-
-    border-radius:28px;
 
-    padding:32px 24px;
-
-    text-align:center;
-
-    box-shadow:
-        0 0 35px rgba(255,204,0,0.15);
+.stat-tile h2 small {
+    font-size: 12px;
+    color: #8a8f9d;
 }
 
-.vpn-icon{
-    font-size:52px;
-    margin-bottom:14px;
+/* CORE BOTTOM NAVIGATION CONTROLLER BAR */
+.bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 72px;
+    background: #0e101a;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 0 10px;
 }
-
-.vpn-card h2{
-    color:#ffcc00;
-
-    font-size:28px;
-    font-weight:800;
 
-    margin-bottom:14px;
+.nav-btn {
+    background: none;
+    border: none;
+    color: #5c6273;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
 }
 
-.vpn-card p{
-    color:#8a8f9d;
-    font-size:14px;
-    margin-bottom:18px;
+.nav-svg {
+    width: 22px;
+    height: 22px;
 }
 
-.vpn-card ul{
-    list-style:none;
-    text-align:left;
+.nav-text {
+    font-size: 11px;
+    font-weight: 600;
 }
 
-.vpn-card li{
-    margin-bottom:12px;
-    color:#ffffff;
-    font-size:14px;
+.nav-btn.active {
+    color: #ffcc00;
 }
-
-/* ================================================= */
-/* RESPONSIVE */
-/* ================================================= */
-
-@media(max-width:420px){
-
-    #tap-coin{
-        width:200px;
-        height:200px;
-    }
-
-    .coin-engraving{
-        font-size:96px;
-    }
-
-    #coin-balance-display{
-        font-size:36px;
-    }
 
+/* FLOATING POPUP TEXT ANIMATION */
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-70px) scale(0.8); opacity: 0; }
 }
-```
