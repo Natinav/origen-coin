@@ -1,197 +1,106 @@
-# UPDATED script.js — PART 1
-
-Delete your current `script.js`.
-
-Create a new `script.js`.
-
-Paste THIS first.
-
-Then after this I will send PART 2.
-
-```javascript id="2mx9rk"
 /* ================================================= */
-/* ORIGEN COIN */
-/* ================================================= */
-
-/* ================================================= */
-/* SUPABASE */
+/* CONFIG */
 /* ================================================= */
 
 const SUPABASE_URL =
-    "https://puaggevlswqumummsokw.supabase.co";
+"https://puaggevlswqumummsokw.supabase.co";
 
-const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcNsfdmzpqzfvCh7inPYYW1tlo8IVmXlNzJFGQ";
+const SUPABASE_KEY =
+"YOUR_ANON_KEY_HERE";
 
-const supabaseClient =
-    window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-    );
+const GITHUB_CONFIG =
+"https://raw.githubusercontent.com/Natinav/origen-config/refs/heads/main/config.json";
 
-/* ================================================= */
-/* GITHUB CONFIG */
-/* ================================================= */
-
-const GITHUB_CONFIG_RAW_URL =
-    "https://raw.githubusercontent.com/Natinav/origen-config/refs/heads/main/config.json";
+const supabase =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
 /* ================================================= */
-/* GLOBAL STATE */
+/* STATE */
 /* ================================================= */
 
-let remoteConfig = {
+let config = {
     coinValue: 0.05,
     vpnRequiredPercentage: 100,
-    tasks: []
+    tasks:[]
 };
 
 let currentUser = null;
 
-let userCoins = 0;
+let coins = 0;
 
-let userTapCount = 0;
+let taps = 0;
 
 let miningLocked = false;
-
-let currentTask = null;
-
-let currentTaskTimer = null;
-
-let taskEndTimestamp = null;
-
-let isVpnLockedForUser = false;
-
-let vpnAssignmentChecked = false;
-
-let currentTaskRunning = false;
 
 /* ================================================= */
 /* ELEMENTS */
 /* ================================================= */
 
 const loginScreen =
-    document.getElementById("login-screen");
+document.getElementById("login-screen");
 
-const appContainer =
-    document.getElementById("app-container");
+const app =
+document.getElementById("app-container");
 
 const loginBtn =
-    document.getElementById("login-btn");
+document.getElementById("login-btn");
 
-const nameInput =
-    document.getElementById("login-name");
+const coinBtn =
+document.getElementById("tap-coin");
 
-const phoneInput =
-    document.getElementById("login-phone");
-
-const coinBalanceDisplay =
-    document.getElementById("coin-balance-display");
-
-const tapCoin =
-    document.getElementById("tap-coin");
-
-const coinStage =
-    document.getElementById("coin-stage");
+const balanceText =
+document.getElementById("coin-balance-display");
 
 const progressFill =
-    document.getElementById("progress-fill");
+document.getElementById("progress-fill");
 
 const tapCounter =
-    document.getElementById("tap-counter");
+document.getElementById("tap-counter");
 
 const taskBox =
-    document.getElementById("task-box");
-
-const navButtons =
-    document.querySelectorAll(".nav-btn");
-
-const appSections =
-    document.querySelectorAll(".app-section");
+document.getElementById("task-box");
 
 const vpnOverlay =
-    document.getElementById("vpn-overlay");
-
-const leaderboardList =
-    document.getElementById("leaderboard-list");
+document.getElementById("vpn-overlay");
 
 /* ================================================= */
-/* MODAL ELEMENTS */
+/* INIT */
 /* ================================================= */
 
-const globalModal =
-    document.getElementById("global-modal");
+window.onload = async () => {
 
-const modalTitle =
-    document.getElementById("modal-title");
+    await loadConfig();
 
-const modalMessage =
-    document.getElementById("modal-message");
+    setupTabs();
 
-const modalButton =
-    document.getElementById("modal-btn");
+    setupVpnListener();
 
-const modalIcon =
-    document.getElementById("modal-icon");
-
-/* ================================================= */
-/* START APP */
-/* ================================================= */
-
-window.addEventListener(
-    "load",
-    async () => {
-
-        await loadRemoteConfig();
-
-        setupNavigation();
-
-        setupVisibilityListener();
-
-        restoreExistingTaskTimer();
-
-        console.log("Origen Coin Initialized");
-
-    }
-);
+};
 
 /* ================================================= */
 /* LOAD CONFIG */
 /* ================================================= */
 
-async function loadRemoteConfig(){
+async function loadConfig(){
 
     try{
 
-        const response =
-            await fetch(
-                GITHUB_CONFIG_RAW_URL +
-                "?t=" +
-                Date.now()
-            );
-
-        const data =
-            await response.json();
-
-        remoteConfig = data;
-
-        console.log(
-            "Remote Config Loaded:",
-            remoteConfig
+        const res =
+        await fetch(
+            GITHUB_CONFIG +
+            "?t=" +
+            Date.now()
         );
 
-    }catch(error){
+        config =
+        await res.json();
 
-        console.error(
-            "Config Fetch Failed:",
-            error
-        );
+    }catch(err){
 
-        remoteConfig = {
-            coinValue: 0.05,
-            vpnRequiredPercentage: 100,
-            tasks: []
-        };
+        console.log(err);
 
     }
 
@@ -201,157 +110,119 @@ async function loadRemoteConfig(){
 /* LOGIN */
 /* ================================================= */
 
-loginBtn.addEventListener(
-    "click",
-    async () => {
+loginBtn.onclick = async () => {
 
-        const fullName =
-            nameInput.value.trim();
+    const name =
+    document.getElementById("login-name")
+    .value
+    .trim();
 
-        const phone =
-            phoneInput.value.trim();
+    const phone =
+    document.getElementById("login-phone")
+    .value
+    .trim();
 
-        if(!fullName || !phone){
+    if(!name || !phone){
 
-            showModal(
-                "⚠️",
-                "Missing Information",
-                "Please enter your full name and Telebirr number.",
-                "Continue"
-            );
+        alert("Enter name and phone");
 
-            return;
-        }
+        return;
+    }
 
-        loginBtn.disabled = true;
+    loginBtn.innerText =
+    "Connecting...";
 
-        loginBtn.innerText =
-            "Connecting...";
+    try{
 
-        try{
+        const {data} =
+        await supabase
+        .from("users")
+        .select("*")
+        .eq("phone_number", phone)
+        .maybeSingle();
 
-            const { data, error } =
-                await supabaseClient
-                .from("users")
-                .select("*")
-                .eq("phone", phone)
-                .single();
+        /* EXISTING USER */
 
-            if(error && error.code !== "PGRST116"){
-                throw error;
-            }
+        if(data){
 
-            /* ========================= */
-            /* EXISTING USER */
-            /* ========================= */
+            currentUser = data;
 
-            if(data){
+            coins =
+            data.coin_balance || 0;
 
-                currentUser = data;
-
-                userCoins =
-                    Number(data.coin_balance || 0);
-
-                userTapCount =
-                    Number(data.tap_count || 0);
-
-                openMainApp();
-
-            }
-
-            /* ========================= */
-            /* NEW USER */
-            /* ========================= */
-
-            else{
-
-                const newUser = {
-
-                    full_name: fullName,
-
-                    phone: phone,
-
-                    coin_balance: 0,
-
-                    tap_count: 0
-
-                };
-
-                const {
-                    data: insertedUser,
-                    error: insertError
-                } =
-                    await supabaseClient
-                    .from("users")
-                    .insert(newUser)
-                    .select()
-                    .single();
-
-                if(insertError){
-                    throw insertError;
-                }
-
-                currentUser =
-                    insertedUser;
-
-                userCoins = 0;
-
-                userTapCount = 0;
-
-                openMainApp();
-
-            }
-
-        }catch(error){
-
-            console.error(
-                "Login Error:",
-                error
-            );
-
-            showModal(
-                "⚠️",
-                "Connection Failed",
-                "Could not connect to Origen Cloud.",
-                "Retry"
-            );
+            taps =
+            data.tap_count || 0;
 
         }
 
-        loginBtn.disabled = false;
+        /* NEW USER */
 
-        loginBtn.innerText =
-            "Enter Mining Hub";
+        else{
+
+            const newUser = {
+
+                phone_number: phone,
+
+                name: name,
+
+                coin_balance:0,
+
+                money_balance:0,
+
+                tap_count:0
+
+            };
+
+            const {data:inserted} =
+            await supabase
+            .from("users")
+            .insert(newUser)
+            .select()
+            .single();
+
+            currentUser = inserted;
+
+        }
+
+        openApp();
+
+    }catch(err){
+
+        console.log(err);
+
+        alert("Connection Failed");
 
     }
-);
+
+    loginBtn.innerText =
+    "Enter Mining Hub";
+
+};
 
 /* ================================================= */
 /* OPEN APP */
 /* ================================================= */
 
-function openMainApp(){
-
-    loginScreen.classList.remove("active");
+function openApp(){
 
     loginScreen.classList.add("hidden");
 
-    appContainer.classList.remove("hidden");
+    app.classList.remove("hidden");
 
     document.getElementById(
         "user-display-name"
     ).innerText =
-        currentUser.full_name;
+    currentUser.name;
 
     document.getElementById(
         "acc-name"
     ).innerText =
-        currentUser.full_name;
+    currentUser.name;
 
     document.getElementById(
         "acc-phone"
     ).innerText =
-        currentUser.phone;
+    currentUser.phone_number;
 
     updateUI();
 
@@ -365,308 +236,196 @@ function openMainApp(){
 
 function updateUI(){
 
-    coinBalanceDisplay.innerText =
-        userCoins.toLocaleString();
+    balanceText.innerText =
+    coins.toLocaleString();
 
     tapCounter.innerText =
-        userTapCount;
+    taps;
 
     const percent =
-        Math.min(
-            (userTapCount / 500) * 100,
-            100
-        );
+    Math.min((taps / 500) * 100,100);
 
     progressFill.style.width =
-        percent + "%";
+    percent + "%";
 
     document.getElementById(
         "acc-coins"
     ).innerText =
-        userCoins.toLocaleString();
+    coins;
 
-    const estimatedValue =
-        (
-            userCoins *
-            Number(remoteConfig.coinValue || 0)
-        ).toFixed(2);
+    const money =
+    (
+        coins *
+        Number(config.coinValue || 0)
+    ).toFixed(2);
 
     document.getElementById(
         "acc-money"
     ).innerText =
-        estimatedValue;
+    money;
 
 }
 
 /* ================================================= */
-/* NAVIGATION */
+/* COIN CLICK */
 /* ================================================= */
 
-function setupNavigation(){
+coinBtn.onclick = async (e) => {
 
-    navButtons.forEach(button => {
+    if(miningLocked) return;
 
-        button.addEventListener(
-            "click",
+    coins++;
+
+    taps++;
+
+    updateUI();
+
+    floatingText(e);
+
+    if(taps >= 500){
+
+        miningLocked = true;
+
+        await saveUser();
+
+        showModal(
+            "⚡",
+            "500 Taps Reached",
+            "Complete tasks to continue mining.",
             () => {
-
-                const target =
-                    button.dataset.target;
-
-                navButtons.forEach(btn => {
-                    btn.classList.remove("active");
-                });
-
-                button.classList.add("active");
-
-                appSections.forEach(section => {
-                    section.classList.add("hidden");
-                });
-
-                document
-                    .getElementById(target)
-                    .classList.remove("hidden");
-
-                if(target === "tasks-screen"){
-
-                    openTasksFlow();
-
-                }
-
-                if(target === "leaderboard-screen"){
-
-                    loadLeaderboard();
-
-                }
-
+                openTasks();
             }
         );
 
-    });
-
-}
-
-/* ================================================= */
-/* TAP ENGINE */
-/* ================================================= */
-
-tapCoin.addEventListener(
-    "click",
-    async (event) => {
-
-        if(miningLocked){
-            return;
-        }
-
-        userCoins += 1;
-
-        userTapCount += 1;
-
-        updateUI();
-
-        createFloatingHitText(event);
-
-        if(userTapCount >= 500){
-
-            miningLocked = true;
-
-            await saveUserData();
-
-            showModal(
-                "⚡",
-                "Mining Capacity Reached",
-                "Your mining core has reached the 500 tap limit. Complete a premium task to recharge and continue mining.",
-                "Go To Tasks",
-                () => {
-
-                    switchToTasksTab();
-
-                }
-            );
-
-        }
-
-        debounceCloudSave();
-
     }
-);
+
+    debounceSave();
+
+};
 
 /* ================================================= */
 /* FLOATING TEXT */
 /* ================================================= */
 
-function createFloatingHitText(event){
+function floatingText(e){
 
-    const text =
-        document.createElement("div");
+    const div =
+    document.createElement("div");
 
-    text.className =
-        "floating-hit-text";
+    div.className =
+    "floating-hit-text";
 
-    text.innerText =
-        "+1";
+    div.innerText =
+    "+1";
 
     const rect =
-        coinStage.getBoundingClientRect();
+    coinBtn.getBoundingClientRect();
 
-    text.style.left =
-        (event.clientX - rect.left) + "px";
+    div.style.left =
+    (e.clientX - rect.left) + "px";
 
-    text.style.top =
-        (event.clientY - rect.top) + "px";
+    div.style.top =
+    (e.clientY - rect.top) + "px";
 
-    coinStage.appendChild(text);
+    document.getElementById(
+        "coin-stage"
+    ).appendChild(div);
 
     setTimeout(() => {
 
-        text.remove();
+        div.remove();
 
-    }, 800);
-
-}
-
-/* ================================================= */
-/* SWITCH TASK TAB */
-/* ================================================= */
-
-function switchToTasksTab(){
-
-    navButtons.forEach(btn => {
-
-        btn.classList.remove("active");
-
-        if(
-            btn.dataset.target ===
-            "tasks-screen"
-        ){
-            btn.classList.add("active");
-        }
-
-    });
-
-    appSections.forEach(section => {
-        section.classList.add("hidden");
-    });
-
-    document
-        .getElementById("tasks-screen")
-        .classList.remove("hidden");
-
-    openTasksFlow();
+    },800);
 
 }
 
 /* ================================================= */
-/* TASK FLOW */
+/* SAVE USER */
 /* ================================================= */
 
-function openTasksFlow(){
+async function saveUser(){
 
-    if(!miningLocked){
+    if(!currentUser) return;
 
-        taskBox.innerHTML = `
+    const money =
+    (
+        coins *
+        Number(config.coinValue || 0)
+    );
 
-            <div class="task-card">
+    await supabase
+    .from("users")
+    .update({
 
-                <h3>
-                    Mining Active
-                </h3>
+        coin_balance:coins,
 
-                <p>
-                    Reach 500 taps to unlock premium tasks.
-                </p>
+        money_balance:money,
 
-            </div>
+        tap_count:taps
 
-        `;
-
-        return;
-    }
-
-    assignVpnRequirement();
-
-    if(isVpnLockedForUser){
-
-        showVpnOverlay();
-
-        return;
-    }
-
-    renderTasks();
-
-}
-
-/* ================================================= */
-/* VPN ASSIGNMENT */
-/* ================================================= */
-
-function assignVpnRequirement(){
-
-    if(vpnAssignmentChecked){
-        return;
-    }
-
-    vpnAssignmentChecked = true;
-
-    const saved =
-        localStorage.getItem(
-            "origen_vpn_assignment"
-        );
-
-    if(saved !== null){
-
-        isVpnLockedForUser =
-            saved === "true";
-
-        return;
-    }
-
-    const percentage =
-        Number(
-            remoteConfig.vpnRequiredPercentage || 0
-        );
-
-    const roll =
-        Math.random() * 100;
-
-    isVpnLockedForUser =
-        roll <= percentage;
-
-    localStorage.setItem(
-        "origen_vpn_assignment",
-        isVpnLockedForUser
+    })
+    .eq(
+        "phone_number",
+        currentUser.phone_number
     );
 
 }
-```
-# UPDATED script.js — PART 2
 
-Paste THIS directly UNDER Part 1 inside the SAME `script.js` file.
-
-```javascript id="vx7eq9"
 /* ================================================= */
-/* VPN OVERLAY */
+/* SAVE DEBOUNCE */
 /* ================================================= */
 
-function showVpnOverlay(){
+let saveTimeout;
 
-    vpnOverlay.classList.remove("hidden");
+function debounceSave(){
 
-    taskBox.innerHTML = "";
+    clearTimeout(saveTimeout);
 
-}
+    saveTimeout =
+    setTimeout(async () => {
 
-function hideVpnOverlay(){
+        await saveUser();
 
-    vpnOverlay.classList.add("hidden");
+    },2000);
 
 }
 
 /* ================================================= */
-/* VISIBILITY LISTENER */
+/* TASKS */
 /* ================================================= */
 
-function setupVisibilityListener(){
+function openTasks(){
+
+    switchTab("tasks-screen");
+
+    const vpnPercent =
+    Number(config.vpnRequiredPercentage || 0);
+
+    const roll =
+    Math.random() * 100;
+
+    const needsVpn =
+    roll <= vpnPercent;
+
+    if(needsVpn){
+
+        vpnOverlay.classList.remove(
+            "hidden"
+        );
+
+    }else{
+
+        renderTasks();
+
+    }
+
+}
+
+/* ================================================= */
+/* VPN LISTENER */
+/* ================================================= */
+
+function setupVpnListener(){
 
     document.addEventListener(
         "visibilitychange",
@@ -674,33 +433,17 @@ function setupVisibilityListener(){
 
             if(document.hidden){
 
-                if(isVpnLockedForUser){
+                if(
+                    !vpnOverlay.classList.contains(
+                        "hidden"
+                    )
+                ){
 
-                    console.log(
-                        "VPN behavior completed."
-                    );
-
-                    hideVpnOverlay();
-
-                    isVpnLockedForUser = false;
-
-                    localStorage.setItem(
-                        "origen_vpn_assignment",
-                        "false"
+                    vpnOverlay.classList.add(
+                        "hidden"
                     );
 
                     renderTasks();
-
-                    setTimeout(() => {
-
-                        showModal(
-                            "✅",
-                            "Global Route Confirmed",
-                            "Your premium mining tasks have been unlocked.",
-                            "Continue"
-                        );
-
-                    }, 300);
 
                 }
 
@@ -719,126 +462,74 @@ function renderTasks(){
 
     taskBox.innerHTML = "";
 
-    const tasks =
-        remoteConfig.tasks || [];
-
-    if(tasks.length === 0){
-
-        taskBox.innerHTML = `
-
-            <div class="task-card">
-
-                <h3>
-                    No Tasks Available
-                </h3>
-
-                <p>
-                    New mining quests will appear soon.
-                </p>
-
-            </div>
-
-        `;
-
-        return;
-    }
-
-    tasks.forEach(task => {
-
-        const reward =
-            task.rewardCoins ||
-            task.reward ||
-            0;
-
-        const duration =
-            task.duration || 60;
-
-        const url =
-            task.videoUrl ||
-            task.url ||
-            "#";
+    config.tasks.forEach(task => {
 
         const card =
-            document.createElement("div");
+        document.createElement("div");
 
         card.className =
-            "task-card";
+        "task-card";
 
         card.innerHTML = `
 
-            <h3>
-                ${task.title}
-            </h3>
+            <h3>${task.title}</h3>
 
             <p>
-                Watch the premium stream and complete the timer to unlock rewards.
+            Watch video to earn reward
             </p>
 
             <div class="reward-tag">
-                +${reward.toLocaleString()} Origen Coins
+            +${task.rewardCoins}
+            Origen Coins
             </div>
 
-            <button
-                class="task-btn"
-                data-level="${task.level}"
-            >
-                Watch Now
+            <button class="task-btn">
+            Start Task
             </button>
 
         `;
 
-        const button =
-            card.querySelector(".task-btn");
-
-        /* ========================= */
-        /* TIMER RESTORE */
-        /* ========================= */
+        const btn =
+        card.querySelector(".task-btn");
 
         const savedEnd =
-            localStorage.getItem(
-                "origen_timer_end_" +
-                task.level
-            );
+        localStorage.getItem(
+            "task_" + task.level
+        );
 
         if(savedEnd){
 
-            const remaining =
-                Math.floor(
-                    (
-                        Number(savedEnd) -
-                        Date.now()
-                    ) / 1000
-                );
-
-            if(remaining > 0){
-
-                startTaskCountdown(
-                    button,
-                    remaining,
-                    task
-                );
-
-            }
+            startTimer(
+                btn,
+                task,
+                Number(savedEnd)
+            );
 
         }
 
-        button.addEventListener(
-            "click",
-            () => {
+        btn.onclick = () => {
 
-                if(currentTaskRunning){
-                    return;
-                }
+            const end =
+            Date.now() +
+            (task.duration * 1000);
 
-                startTask(
-                    task,
-                    button,
-                    url,
-                    duration
-                );
+            localStorage.setItem(
+                "task_" + task.level,
+                end
+            );
 
-            }
-        );
+            window.open(
+                task.videoUrl,
+                "_blank"
+            );
+
+            startTimer(
+                btn,
+                task,
+                end
+            );
+
+        };
 
         taskBox.appendChild(card);
 
@@ -847,205 +538,64 @@ function renderTasks(){
 }
 
 /* ================================================= */
-/* START TASK */
+/* TASK TIMER */
 /* ================================================= */
 
-function startTask(
-    task,
-    button,
-    url,
-    duration
-){
+function startTimer(btn,task,end){
 
-    currentTaskRunning = true;
+    btn.disabled = true;
 
-    currentTask = task;
+    const interval =
+    setInterval(async () => {
 
-    taskEndTimestamp =
-        Date.now() +
-        (duration * 1000);
-
-    localStorage.setItem(
-        "origen_timer_end_" + task.level,
-        taskEndTimestamp
-    );
-
-    window.open(
-        url,
-        "_blank"
-    );
-
-    startTaskCountdown(
-        button,
-        duration,
-        task
-    );
-
-}
-
-/* ================================================= */
-/* TIMER */
-/* ================================================= */
-
-function startTaskCountdown(
-    button,
-    seconds,
-    task
-){
-
-    button.disabled = true;
-
-    clearInterval(currentTaskTimer);
-
-    currentTaskTimer =
-        setInterval(async () => {
-
-            const end =
-                Number(
-                    localStorage.getItem(
-                        "origen_timer_end_" +
-                        task.level
-                    )
-                );
-
-            const remaining =
-                Math.floor(
-                    (
-                        end -
-                        Date.now()
-                    ) / 1000
-                );
-
-            if(remaining <= 0){
-
-                clearInterval(
-                    currentTaskTimer
-                );
-
-                localStorage.removeItem(
-                    "origen_timer_end_" +
-                    task.level
-                );
-
-                button.innerText =
-                    "Reward Granted";
-
-                button.style.opacity =
-                    "0.7";
-
-                await rewardTask(task);
-
-                return;
-            }
-
-            const minutes =
-                Math.floor(
-                    remaining / 60
-                );
-
-            const secs =
-                remaining % 60;
-
-            button.innerText =
-                `Watching ${minutes}:${secs
-                    .toString()
-                    .padStart(2, "0")}`;
-
-        }, 1000);
-
-}
-
-/* ================================================= */
-/* TASK REWARD */
-/* ================================================= */
-
-async function rewardTask(task){
-
-    const reward =
-        Number(
-            task.rewardCoins ||
-            task.reward ||
-            0
+        const remain =
+        Math.floor(
+            (end - Date.now()) / 1000
         );
 
-    userCoins += reward;
+        if(remain <= 0){
 
-    userTapCount = 0;
+            clearInterval(interval);
 
-    miningLocked = false;
-
-    currentTaskRunning = false;
-
-    updateUI();
-
-    await saveUserData();
-
-    showModal(
-        "🎉",
-        "Reward Granted",
-        `You received ${reward.toLocaleString()} Origen Coins and your mining energy has been restored.`,
-        "Continue"
-    );
-
-}
-
-/* ================================================= */
-/* SAVE USER */
-/* ================================================= */
-
-async function saveUserData(){
-
-    if(!currentUser){
-        return;
-    }
-
-    try{
-
-        await supabaseClient
-            .from("users")
-            .update({
-
-                coin_balance:
-                    userCoins,
-
-                tap_count:
-                    userTapCount
-
-            })
-            .eq(
-                "id",
-                currentUser.id
+            localStorage.removeItem(
+                "task_" + task.level
             );
 
-    }catch(error){
+            coins +=
+            Number(task.rewardCoins);
 
-        console.error(
-            "Save Error:",
-            error
-        );
+            taps = 0;
 
-    }
+            miningLocked = false;
 
-}
+            updateUI();
 
-/* ================================================= */
-/* SAVE DEBOUNCE */
-/* ================================================= */
+            await saveUser();
 
-let saveDebounceTimeout = null;
+            btn.innerText =
+            "Reward Claimed";
 
-function debounceCloudSave(){
+            showModal(
+                "🎉",
+                "Reward Granted",
+                `+${task.rewardCoins} Coins Added`
+            );
 
-    clearTimeout(
-        saveDebounceTimeout
-    );
+            return;
+        }
 
-    saveDebounceTimeout =
-        setTimeout(async () => {
+        const min =
+        Math.floor(remain / 60);
 
-            await saveUserData();
+        const sec =
+        remain % 60;
 
-        }, 3000);
+        btn.innerText =
+        `${min}:${sec
+            .toString()
+            .padStart(2,"0")}`;
+
+    },1000);
 
 }
 
@@ -1055,63 +605,44 @@ function debounceCloudSave(){
 
 async function loadLeaderboard(){
 
-    try{
+    const {data} =
+    await supabase
+    .from("users")
+    .select("*")
+    .order(
+        "coin_balance",
+        {ascending:false}
+    )
+    .limit(20);
 
-        const {
-            data,
-            error
-        } =
-            await supabaseClient
-            .from("users")
-            .select("*")
-            .order(
-                "coin_balance",
-                {
-                    ascending:false
-                }
-            )
-            .limit(20);
+    const list =
+    document.getElementById(
+        "leaderboard-list"
+    );
 
-        if(error){
-            throw error;
-        }
+    list.innerHTML = "";
 
-        leaderboardList.innerHTML = "";
+    data.forEach((user,index) => {
 
-        data.forEach(
-            (user,index) => {
+        const li =
+        document.createElement("li");
 
-                const li =
-                    document.createElement("li");
+        li.innerHTML = `
 
-                li.innerHTML = `
+            <span>
+            #${index+1}
+            ${user.name}
+            </span>
 
-                    <span>
-                        #${index + 1}
-                        ${user.full_name}
-                    </span>
+            <strong>
+            ${user.coin_balance}
+            </strong>
 
-                    <strong>
-                        ${Number(
-                            user.coin_balance || 0
-                        ).toLocaleString()}
-                    </strong>
+        `;
 
-                `;
+        list.appendChild(li);
 
-                leaderboardList.appendChild(li);
-
-            }
-        );
-
-    }catch(error){
-
-        console.error(
-            "Leaderboard Error:",
-            error
-        );
-
-    }
+    });
 
 }
 
@@ -1123,83 +654,94 @@ function showModal(
     icon,
     title,
     message,
-    buttonText,
     callback = null
 ){
 
-    modalIcon.innerText =
-        icon;
+    document.getElementById(
+        "modal-icon"
+    ).innerText =
+    icon;
 
-    modalTitle.innerText =
-        title;
+    document.getElementById(
+        "modal-title"
+    ).innerText =
+    title;
 
-    modalMessage.innerText =
-        message;
+    document.getElementById(
+        "modal-message"
+    ).innerText =
+    message;
 
-    modalButton.innerText =
-        buttonText;
-
-    globalModal.classList.remove(
-        "hidden"
+    const modal =
+    document.getElementById(
+        "global-modal"
     );
 
-    modalButton.onclick =
-        () => {
+    modal.classList.remove("hidden");
 
-            globalModal.classList.add(
-                "hidden"
+    document.getElementById(
+        "modal-btn"
+    ).onclick = () => {
+
+        modal.classList.add(
+            "hidden"
+        );
+
+        if(callback){
+            callback();
+        }
+
+    };
+
+}
+
+/* ================================================= */
+/* TABS */
+/* ================================================= */
+
+function setupTabs(){
+
+    document.querySelectorAll(
+        ".nav-btn"
+    ).forEach(btn => {
+
+        btn.onclick = () => {
+
+            switchTab(
+                btn.dataset.target
             );
-
-            if(callback){
-                callback();
-            }
 
         };
 
+    });
+
+}
+
+function switchTab(id){
+
+    document.querySelectorAll(
+        ".app-section"
+    ).forEach(sec => {
+
+        sec.classList.add("hidden");
+
+    });
+
+    document.getElementById(id)
+    .classList.remove("hidden");
+
 }
 
 /* ================================================= */
-/* TIMER RESTORE */
+/* AUTO SAVE */
 /* ================================================= */
 
-function restoreExistingTaskTimer(){
+setInterval(async () => {
 
-    const keys =
-        Object.keys(localStorage);
+    if(currentUser){
 
-    const timerKeys =
-        keys.filter(key =>
-            key.startsWith(
-                "origen_timer_end_"
-            )
-        );
-
-    if(timerKeys.length > 0){
-
-        miningLocked = true;
+        await saveUser();
 
     }
 
-}
-
-/* ================================================= */
-/* AUTO CLOUD SAVE */
-/* ================================================= */
-
-setInterval(
-    async () => {
-
-        if(currentUser){
-
-            await saveUserData();
-
-        }
-
-    },
-    30000
-);
-
-console.log(
-    "Origen Coin Script Loaded Successfully"
-);
-```
+},30000);
