@@ -44,6 +44,13 @@ const progressFill = document.getElementById('progress-fill');
 const taskBox = document.getElementById('task-box');
 const syncStatus = document.getElementById('sync-status');
 
+// Global System Modal Selection Bindings Fixed
+const globalModal = document.getElementById("global-modal");
+const modalTitle = document.getElementById("modal-title");
+const modalMessage = document.getElementById("modal-message");
+const modalButton = document.getElementById("modal-btn");
+const modalIcon = document.getElementById("modal-icon");
+
 // ====================================================================
 // 2. CONFIG PARSER
 // ====================================================================
@@ -74,7 +81,7 @@ async function verifyGlobalNetworkGate() {
         const userCountry = geoReport.country_code; 
 
         if (userCountry === "ET") {
-            alert("🌍 GLOBAL NETWORK REQUIRED!\n\nPlease turn ON your VPN to any international country (outside Ethiopia) and try again.");
+            showModal("🌍", "Global Route Required", "Please turn ON your VPN to any international country (outside Ethiopia) and try again.", "Understood");
             return false; 
         }
         return true;
@@ -118,7 +125,7 @@ if (loginBtn) {
         const phone = phoneInput.value.trim();
 
         if(!name || !phone) {
-            alert("Fields cannot be left empty!");
+            showModal("⚠️", "Validation Error", "Fields cannot be left empty!", "Close");
             return;
         }
 
@@ -195,7 +202,7 @@ if (loginBtn) {
 if (tapCoin) {
     tapCoin.addEventListener('click', (e) => {
         if (isCoinLocked) {
-            alert("Capacitor Depleted! Complete Active Video Task To Recharge Coin!");
+            showModal("⚡", "Capacitor Depleted", "Complete the active video task to recharge your core coin capacitor!", "Go to Tasks");
             return;
         }
 
@@ -212,7 +219,7 @@ if (tapCoin) {
 
         if (currentTapsCount >= 500) {
             isCoinLocked = true;
-            alert("Capacitor hit 500 taps! Coin locked. Fulfill task to release safety gates.");
+            showModal("🔒", "Core Energy Limit", "Capacitor hit 500 taps! Coin locked. Fulfill task to release safety gates.", "Unlock Now");
             renderActiveTask();
             forceCloudDataSave(); 
         }
@@ -268,16 +275,16 @@ async function renderActiveTask() {
     const currentTask = remoteConfig.tasks[currentLoopIndex];
 
     if (!isCoinLocked) {
-        taskBox.innerHTML = `<p style="text-align:center;padding:15px;color:#aaa;background:rgba(255,255,255,0.02);border-radius:12px;">Core capacitor active. Keep tapping to extract points.</p>`;
+        taskBox.innerHTML = `<p style="text-align:center;padding:25px;color:#aaa;background:rgba(255,255,255,0.01);border:1px dashed rgba(255,255,255,0.05);border-radius:16px;">Core capacitor active. Keep tapping to extract points.</p>`;
         return;
     }
 
     taskBox.innerHTML = `
-        <div class="task-card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:20px; border-radius:12px;">
-            <h3 style="margin:0 0 5px 0; font-size:16px;">${currentTask.title}</h3>
-            <p style="color:#ffcc00; font-weight:600; margin:0 0 15px 0;">Reward: +${currentTask.rewardCoins} Coins</p>
-            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; color:#111; border:none; border-radius:8px; font-weight:700; cursor:pointer;">游 Watch Required Video</button>
-            <button id="claim-btn" style="width:100%; padding:12px; background:#222; color:#555; border:none; border-radius:8px; font-weight:700; margin-top:10px; cursor:not-allowed;" disabled>Awaiting Verification</button>
+        <div class="task-card">
+            <h3>${currentTask.title}</h3>
+            <div class="reward-tag">Reward: +${currentTask.rewardCoins} Coins</div>
+            <button id="watch-btn" style="width:100%; padding:14px; background:#ffcc00; color:#111; border:none; border-radius:12px; font-weight:700; cursor:pointer; margin-top:5px; transition:0.2s;">Watch Required Video</button>
+            <button id="claim-btn" style="width:100%; padding:14px; background:#222; color:#555; border:none; border-radius:12px; font-weight:700; margin-top:12px; cursor:not-allowed; transition:0.2s;" disabled>Awaiting Verification</button>
         </div>
     `;
 
@@ -297,7 +304,7 @@ async function renderActiveTask() {
             watchBtn.innerText = "Checking Network Routing...";
             const clearToProceed = await verifyGlobalNetworkGate();
             if (!clearToProceed) {
-                watchBtn.innerText = "游 Watch Required Video";
+                watchBtn.innerText = "Watch Required Video";
                 return; 
             }
             window.open(currentTask.videoUrl, '_blank');
@@ -315,7 +322,7 @@ async function renderActiveTask() {
             currentTapsCount = 0; 
             isCoinLocked = false;
             localStorage.removeItem(storageKey); 
-            alert(`Credits claimed! +${pointsEarned} Coins credited.`);
+            showModal("🎉", "Credits Claimed", `+${pointsEarned} Coins successfully credited to your main balance wallet.`, "Continue");
             if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
             updateTapProgressUI();
             renderActiveTask();
@@ -330,6 +337,7 @@ function videoEngagedCountdownEngine(endTimeTarget, claimButton, watchButton, ke
         watchButton.innerText = "✔ Watch Links Connected";
         watchButton.style.background = "#161824";
         watchButton.style.color = "#444";
+        watchButton.style.cursor = "default";
     }
 
     if(taskCountdownTimer) clearInterval(taskCountdownTimer);
@@ -385,7 +393,7 @@ async function forceCloudDataSave() {
 async function loadLeaderboard() {
     const listContainer = document.getElementById('leaderboard-list');
     if (!listContainer || !_supabase) return;
-    listContainer.innerHTML = "<li style='text-align:center;color:#aaa;list-style:none;'>Syncing Global Board...</li>";
+    listContainer.innerHTML = "<li style='text-align:center;color:#aaa;padding:20px;list-style:none;'>Syncing Global Board...</li>";
     try {
         let { data: topUsers } = await _supabase
             .from('users')
@@ -396,16 +404,16 @@ async function loadLeaderboard() {
         listContainer.innerHTML = "";
         topUsers.forEach((user, index) => {
             let li = document.createElement('li');
-            li.style.cssText = "display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:14px;";
+            li.style.cssText = "display:flex; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:14px;";
             let rank = index + 1;
             if(rank === 1) rank = "🥇";
             else if(rank === 2) rank = "🥈";
             else if(rank === 3) rank = "🥉";
-            li.innerHTML = `<div><span>${rank}</span><span style="margin-left:10px;">${user.name}</span></div><span style="color:#ffcc00">🪙 ${user.coin_balance.toLocaleString()}</span>`;
+            li.innerHTML = `<div><span>${rank}</span><span style="margin-left:10px;font-weight:500;">${user.name}</span></div><span style="color:#ffcc00;font-weight:600;">🪙 ${user.coin_balance.toLocaleString()}</span>`;
             listContainer.appendChild(li);
         });
     } catch (e) {
-        listContainer.innerHTML = "<li style='text-align:center; color:#aaa;list-style:none;'>Leaderboard data link loaded locally.</li>";
+        listContainer.innerHTML = "<li style='text-align:center; color:#aaa;padding:20px;list-style:none;'>Leaderboard data link loaded locally.</li>";
     }
 }
 
@@ -423,4 +431,18 @@ function updateAccountDetails() {
         let finalMoney = currentUser.coin_balance * remoteConfig.coinValue;
         accMoney.innerText = finalMoney.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
+}
+
+// Unified Modal Engine Selector Function
+function showModal(icon, title, message, buttonText) {
+    if (!globalModal) return;
+    modalIcon.innerText = icon;
+    modalTitle.innerText = title;
+    modalMessage.innerText = message;
+    modalButton.innerText = buttonText;
+    globalModal.classList.remove("hidden");
+    
+    modalButton.onclick = () => {
+        globalModal.classList.add("hidden");
+    };
 }
