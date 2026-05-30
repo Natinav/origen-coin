@@ -8,7 +8,7 @@ let isVpnLockedForUser = false;    // Tracks if this specific user got locked by
 
 // Remote configuration fallback (Will overwrite when connected to your config repo)
 let remoteConfig = {
-    vpnRequiredPercentage: "100", // Defaulting to 100% for testing so you always see it
+    vpnRequiredPercentage: "100", // Enforced at 100% so every single user receives the prompt
     tasks: [
         { id: 1, title: "Watch Premium Ad Stream 1", reward: 150, url: "https://www.youtube.com" },
         { id: 2, title: "Watch Premium Ad Stream 2", reward: 200, url: "https://www.youtube.com" }
@@ -103,7 +103,7 @@ function createFloatingText(e) {
     const floatText = document.createElement("div");
     floatText.textContent = "+1";
     floatText.style.position = "absolute";
-    floatText.style.color = "#ff7b00";
+    floatText.style.color = "#ffcc00";
     floatText.style.fontWeight = "bold";
     floatText.style.fontSize = "20px";
     floatText.style.pointerEvents = "none";
@@ -166,7 +166,7 @@ function setupVisibilityListener() {
 }
 
 // ====================================================================
-// 6. DYNAMIC UI MODAL RENDERING
+// 6. DYNAMIC UI MODAL RENDERING (BLACK & PREMIUM GOLD THEME)
 // ====================================================================
 function showVpnLockModal() {
     let lockOverlay = document.getElementById("vpn-lock-modal");
@@ -178,22 +178,22 @@ function showVpnLockModal() {
         lockOverlay = document.createElement("div");
         lockOverlay.id = "vpn-lock-modal";
         lockOverlay.innerHTML = `
-            <div style="background: #151518; border: 2px solid #ff7b00; padding: 35px 25px; border-radius: 16px; text-align: center; max-width: 85%; box-shadow: 0 0 30px rgba(255, 123, 0, 0.25); font-family: sans-serif;">
-                <h1 style="color: #ff3b30; margin-top: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">⚠️ TURN ON VPN</h1>
-                <p style="color: #ffffff; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">To access high-yield premium tasks, your profile container must routing-tunnel outside local delivery zones.</p>
+            <div style="background: linear-gradient(145deg, #121420, #1a1d2e); border: 2px solid #ffcc00; padding: 35px 25px; border-radius: 24px; text-align: center; max-width: 85%; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 204, 0, 0.15); font-family: 'Poppins', sans-serif;">
+                <h1 style="color: #ffcc00; margin-top: 0; font-size: 26px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">⚠️ TURN ON VPN</h1>
+                <p style="color: #8a8f9d; font-size: 14px; line-height: 1.6; margin-bottom: 25px;">To access high-yield premium tasks, your profile container must routing-tunnel outside local delivery zones.</p>
                 
-                <div style="background: rgba(255, 123, 0, 0.08); border-left: 4px solid #ff7b00; padding: 12px 15px; text-align: left; border-radius: 4px;">
-                    <strong style="color: #ff7b00; font-size: 14px; display: block; margin-bottom: 6px;">Follow these steps precisely:</strong>
-                    <ol style="color: #d1d1d6; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.5;">
-                        <li style="margin-bottom: 4px;">Minimize this app (Do not close it entirely).</li>
-                        <li style="margin-bottom: 4px;">Open your choice VPN tool and launch a secure global link.</li>
+                <div style="background: #0d0f17; border-left: 4px solid #ff9900; padding: 15px; text-align: left; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); border-left: 4px solid #ff9900;">
+                    <strong style="color: #ffcc00; font-size: 14px; display: block; margin-bottom: 8px; font-weight: 700;">Follow these steps precisely:</strong>
+                    <ol style="color: #ffffff; margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
+                        <li style="margin-bottom: 6px;">Minimize this app (Do not close it entirely).</li>
+                        <li style="margin-bottom: 6px;">Open your choice VPN tool and launch a secure global link.</li>
                         <li>Return straight back to this page to clear the lock.</li>
                     </ol>
                 </div>
                 
                 <div style="margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-                    <div style="width: 8px; height: 8px; background: #ff7b00; border-radius: 50%; animation: pulse 1.2s infinite alternate;"></div>
-                    <p style="color: #8e8e93; font-size: 12px; margin: 0; font-style: italic;">Awaiting background system routing sync...</p>
+                    <div style="width: 8px; height: 8px; background: #ffcc00; border-radius: 50%; animation: pulse 1.2s infinite alternate; box-shadow: 0 0 8px #ffcc00;"></div>
+                    <p style="color: #8a8f9d; font-size: 12px; margin: 0; font-style: italic;">Awaiting background system routing sync...</p>
                 </div>
             </div>
             
@@ -205,16 +205,15 @@ function showVpnLockModal() {
             </style>
         `;
 
-        // Apply dark glass styling to block user interaction completely
+        // Apply deep premium matching dark gloss styling to block interactions completely
         Object.assign(lockOverlay.style, {
             position: "absolute",
             top: "0", left: "0", width: "100%", height: "100%",
-            background: "rgba(8, 8, 10, 0.98)",
+            background: "rgba(9, 10, 16, 0.98)",
             display: "flex", justifyContent: "center", alignItems: "center",
-            zIndex: "9999", borderRadius: "12px"
+            zIndex: "9999", borderRadius: "24px"
         });
 
-        // Ensure parent container is positioned relatively so absolute overlay doesn't spill out
         taskTabContent.style.position = "relative";
         taskTabContent.appendChild(lockOverlay);
     }
@@ -233,7 +232,6 @@ function renderTasksLive() {
     const taskTabContent = document.getElementById("tasks-tab");
     if (!taskTabContent) return;
 
-    // Remove existing tasks wrapper or loader text inside tab if there is one
     taskTabContent.innerHTML = ""; 
 
     const tasksWrapper = document.createElement("div");
@@ -245,16 +243,16 @@ function renderTasksLive() {
     title.textContent = "Premium Video Streams";
     title.style.color = "#ffffff";
     title.style.marginBottom = "20px";
+    title.style.fontWeight = "700";
     tasksWrapper.appendChild(title);
 
-    // Build lists dynamically from configuration array
     remoteConfig.tasks.forEach(task => {
         const card = document.createElement("div");
         Object.assign(card.style, {
-            background: "#1e1e24",
-            border: "1px solid #2d2d35",
-            borderRadius: "10px",
-            padding: "15px",
+            background: "#121420",
+            border: "1px solid rgba(255, 255, 255, 0.05)",
+            borderRadius: "16px",
+            padding: "15px 20px",
             marginBottom: "15px",
             display: "flex",
             justifyContent: "space-between",
@@ -263,10 +261,10 @@ function renderTasksLive() {
 
         card.innerHTML = `
             <div>
-                <h4 style="color: #ffffff; margin: 0 0 5px 0; font-size: 16px;">${task.title}</h4>
-                <p style="color: #ff7b00; margin: 0; font-weight: bold; font-size: 14px;">+${task.reward} Origen Coins</p>
+                <h4 style="color: #ffffff; margin: 0 0 5px 0; font-size: 15px; font-weight: 600;">${task.title}</h4>
+                <p style="color: #ffcc00; margin: 0; font-weight: 700; font-size: 13px;">+${task.reward} Origen Coins</p>
             </div>
-            <button onclick="window.open('${task.url}', '_blank');" style="background: #ff7b00; color: #ffffff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s;">
+            <button onclick="window.open('${task.url}', '_blank');" style="background: linear-gradient(90deg, #ffcc00, #ff9900); color: #000000; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: transform 0.2s; font-size: 13px;">
                 Watch Now
             </button>
         `;
