@@ -6,7 +6,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let supabaseClient = null;
 try {
-    // Robust checks to bind library global reference accurately
     if (typeof supabase !== 'undefined') {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else if (typeof window.supabase !== 'undefined') {
@@ -54,7 +53,7 @@ const modalIcon = document.getElementById("modal-icon");
 const vpnOverlay = document.getElementById("vpn-overlay");
 
 // ====================================================================
-// 2. REMOTE PARSER & VPN FILTERS
+// 2. REMOTE PARSER & VPN SECURITY SYSTEM
 // ====================================================================
 async function loadRemoteConfig() {
     try {
@@ -63,21 +62,79 @@ async function loadRemoteConfig() {
     } catch (e) { console.log("Using cached configurations."); }
 }
 
-async function verifyGlobalNetworkGate() {
+async function executeVpnGateCheck() {
     const randomRoll = Math.floor(Math.random() * 100) + 1;
-    if (randomRoll > (remoteConfig.vpnRequiredPercentage || 0)) return true; 
-    try {
-        let response = await fetch("https://ipapi.co/json/");
-        if (!response.ok) return true;
-        let data = await response.json();
-        if (data.country_code === "ET") {
-            if (vpnOverlay) vpnOverlay.classList.remove("hidden");
-            showModal("🌍", "VPN Route Flagged", "Please initialize an outside connection to unlock mining verification parameters.", "Okay");
-            return false;
-        }
+    const requiredPct = remoteConfig.vpnRequiredPercentage !== undefined ? remoteConfig.vpnRequiredPercentage : 100;
+    
+    // If user beats the percentage chance, bypass check entirely
+    if (randomRoll > requiredPct) {
         if (vpnOverlay) vpnOverlay.classList.add("hidden");
-        return true;
-    } catch (err) { return true; }
+        switchSectionToTasks();
+        return;
+    }
+
+    if (vpnOverlay) {
+        // Render updated premium card inside your native overlay container
+        vpnOverlay.innerHTML = `
+            <div class="vpn-card">
+                <div class="vpn-icon" style="font-size: 40px; margin-bottom: 12px;">🌍</div>
+                <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">VPN REQUIRED</h2>
+                <p style="color: #8e8e9a; font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
+                    Please route your connection outside of Ethiopia to unlock the mining verification parameters.
+                </p>
+                <button id="vpn-check-btn" style="width: 100%; padding: 14px; background: linear-gradient(90deg, #ffcc00, #ff7b00); border: none; border-radius: 12px; color: #111; font-weight: 800; cursor: pointer; font-size: 14px;">
+                    Check Connection
+                </button>
+            </div>
+        `;
+        vpnOverlay.classList.remove("hidden");
+
+        const checkBtn = document.getElementById("vpn-check-btn");
+        checkBtn.addEventListener("click", async () => {
+            checkBtn.innerText = "Verifying Route...";
+            checkBtn.disabled = true;
+
+            try {
+                let response = await fetch("https://ipapi.co/json/");
+                
+                // Track if ad-blocker or proxy dropped the fetch stream entirely
+                if (!response.ok) {
+                    showModal("⚠️", "Network Intercepted", "Connection verification blocked. Please temporarily disable your ad blocker or check your network connection and try again.", "Try Again");
+                    checkBtn.innerText = "Check Connection";
+                    checkBtn.disabled = false;
+                    return;
+                }
+                
+                let data = await response.json();
+
+                if (data.country_code === "ET") {
+                    showModal("⚠️", "VPN Route Flagged", "VPN not detected, please turn on an international VPN connection and try again.", "Try Again");
+                    checkBtn.innerText = "Check Connection";
+                    checkBtn.disabled = false;
+                } else {
+                    vpnOverlay.classList.add("hidden");
+                    switchSectionToTasks();
+                }
+            } catch (err) {
+                // Catch statement handles ad-block script blocks cleanly
+                showModal("⚠️", "Security Exception", "Network verification error. Please ensure your VPN is active and any ad blockers are disabled.", "Try Again");
+                checkBtn.innerText = "Check Connection";
+                checkBtn.disabled = false;
+            }
+        });
+    }
+}
+
+function switchSectionToTasks() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
+    
+    const taskNavBtn = document.querySelector('[data-target="tasks-screen"]');
+    if (taskNavBtn) taskNavBtn.classList.add('active');
+    
+    const tasksScreen = document.getElementById('tasks-screen');
+    if (tasksScreen) tasksScreen.classList.remove('hidden');
+    renderActiveTask();
 }
 
 // ====================================================================
@@ -85,6 +142,12 @@ async function verifyGlobalNetworkGate() {
 // ====================================================================
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+        // Enforce lock navigation if limits are tripped
+        if (isCoinLocked && btn.getAttribute('data-target') !== 'tasks-screen') {
+            executeVpnGateCheck();
+            return;
+        }
+
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
         btn.classList.add('active');
@@ -175,7 +238,7 @@ if (loginBtn) {
 if (tapCoin) {
     tapCoin.addEventListener('click', (e) => {
         if (isCoinLocked) {
-            showModal("🔒", "Capacitor Depleted", "Complete your designated active task loop to restore balance tapping.", "Understood");
+            executeVpnGateCheck();
             return;
         }
 
@@ -191,9 +254,8 @@ if (tapCoin) {
 
         if (currentTapsCount >= 500) {
             isCoinLocked = true;
-            showModal("⚡", "Maximum Capacity Hit", "Energy empty! Fulfill the current verification task to clear safety locks.", "Go to Tasks");
-            renderActiveTask();
             forceCloudDataSave(); 
+            executeVpnGateCheck();
         }
     });
 }
@@ -239,16 +301,16 @@ async function renderActiveTask() {
     const currentTask = remoteConfig.tasks[(currentUser.task_level - 1) % remoteConfig.tasks.length];
 
     if (!isCoinLocked) {
-        taskBox.innerHTML = `<p style="text-align:center;color:#8a8f9d;padding:20px;">Ecosystem capacitor functional. Continue extraction processing.</p>`;
+        taskBox.innerHTML = `<p style="text-align:center;color:#8e8e9a;padding:20px;font-size:13px;">Ecosystem capacitor functional. Continue extraction processing.</p>`;
         return;
     }
 
     taskBox.innerHTML = `
-        <div class="task-card" style="background:#1a1d2e; border:1px solid rgba(255,255,255,0.06); padding:20px; border-radius:16px;">
-            <h3>${currentTask.title}</h3>
+        <div class="task-card" style="background:#121420; border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:16px;">
+            <h3 style="font-size: 16px; font-weight:700; margin-bottom:6px;">${currentTask.title}</h3>
             <p style="color:#ffcc00; font-weight:700; margin:4px 0 16px 0;">+${currentTask.rewardCoins} Coins</p>
-            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; border:none; color:#111; font-weight:700; border-radius:10px; cursor:pointer;">Launch Video Task</button>
-            <button id="claim-btn" style="width:100%; padding:12px; background:#222; border:none; color:#555; font-weight:700; border-radius:10px; margin-top:10px;" disabled>Processing Node Link...</button>
+            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; border:none; color:#111; font-weight:700; border-radius:10px; cursor:pointer; font-size:14px;">Launch Video Task</button>
+            <button id="claim-btn" style="width:100%; padding:12px; background:#191c2c; border:none; color:#4e5361; font-weight:700; border-radius:10px; margin-top:10px; font-size:14px;" disabled>Processing Node Link...</button>
         </div>
     `;
 
@@ -259,10 +321,8 @@ async function renderActiveTask() {
 
     if (savedEndTime) runTaskTimer(parseInt(savedEndTime), claimBtn, watchBtn, storageKey, currentTask);
 
-    watchBtn.addEventListener('click', async () => {
+    watchBtn.addEventListener('click', () => {
         if(localStorage.getItem(storageKey)) return;
-        watchBtn.innerText = "Configuring Networks...";
-        if (!await verifyGlobalNetworkGate()) { watchBtn.innerText = "Launch Video Task"; return; }
         window.open(currentTask.videoUrl, '_blank');
         const end = Date.now() + (currentTask.duration * 1000);
         localStorage.setItem(storageKey, end);
@@ -275,7 +335,7 @@ async function renderActiveTask() {
         currentTapsCount = 0;
         isCoinLocked = false;
         localStorage.removeItem(storageKey);
-        showModal("🎉", "Task Certified", "Rewards added successfully. Core core cleared.", "Proceed");
+        showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
         renderActiveTask();
         updateTapProgressUI();
         saveProgressLocally();
@@ -283,16 +343,16 @@ async function renderActiveTask() {
     });
 }
 
-// (Rest of file helper functions remain identical to your backup configuration)
 function runTaskTimer(targetTime, claim, watch, key, task) {
-    if (watch) { watch.innerText = "✔ Loop Processing"; watch.style.background = "#0d0f18"; watch.style.color = "#444"; }
+    if (watch) { watch.innerText = "✔ Loop Processing"; watch.style.background = "#0d0f18"; watch.style.color = "#4e5361"; watch.style.cursor = "default"; }
     if (taskCountdownTimer) clearInterval(taskCountdownTimer);
     
     taskCountdownTimer = setInterval(() => {
         let diff = targetTime - Date.now();
         if (diff <= 0) {
             clearInterval(taskCountdownTimer);
-            if (claim) { claim.removeAttribute('disabled'); claim.style.background = "#00ff88"; claim.style.color = "#111"; claim.innerText = "Claim Verified Points"; }
+            // Auto-trigger complete interface setup once countdown terminates
+            renderActiveTask();
         } else {
             let secs = Math.ceil(diff / 1000);
             if (claim) claim.innerText = `Analyzing Sync (${secs}s)`;
@@ -319,17 +379,17 @@ async function forceCloudDataSave() {
 async function loadLeaderboard() {
     const list = document.getElementById('leaderboard-list');
     if (!list || !supabaseClient) return;
-    list.innerHTML = "<li style='text-align:center;color:#8a8f9d;list-style:none;'>Querying global rankings...</li>";
+    list.innerHTML = "<li style='text-align:center;color:#8e8e9a;list-style:none;font-size:13px;'>Querying global rankings...</li>";
     try {
         let { data } = await supabaseClient.from('users').select('name, coin_balance').order('coin_balance', { ascending: false }).limit(50);
         list.innerHTML = "";
         data.forEach((u, idx) => {
             let li = document.createElement('li');
-            li.style.cssText = "display:flex; justify-content:space-between; padding:12px 6px; border-bottom:1px solid rgba(255,255,255,0.02); font-size:14px;";
+            li.style.cssText = "display:flex; justify-content:space-between; padding:14px 6px; border-bottom:1px solid rgba(255,255,255,0.02); font-size:14px;";
             li.innerHTML = `<span>${idx + 1}. ${u.name}</span><span style="color:#ffcc00">🪙 ${u.coin_balance.toLocaleString()}</span>`;
             list.appendChild(li);
         });
-    } catch(e) { list.innerHTML = "<li style='text-align:center;color:#8a8f9d;list-style:none;'>Failed to trace database metrics.</li>"; }
+    } catch(e) { list.innerHTML = "<li style='text-align:center;color:#8e8e9a;list-style:none;font-size:13px;'>Failed to trace database metrics.</li>"; }
 }
 
 function updateAccountDetails() {
