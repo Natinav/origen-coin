@@ -1,4 +1,6 @@
-/* GENERAL APP WRAPPER CONFIG */
+/* ====================================================================
+   1. GLOBAL SYSTEM RESET & BODY CONFIG
+   ==================================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -18,12 +20,14 @@ body {
     overflow: hidden;
 }
 
-/* UNIVERSAL STRUCTURAL UTILITY HIDDEN GATE */
+/* UNIVERSAL UTILITY HIDDEN GATE */
 .hidden {
     display: none !important;
 }
 
-/* PREMIUM INTERACTIVE LOGIN PANEL UI */
+/* ====================================================================
+   2. AUTHENTICATION & LOGIN UI (FIXED OVERFLOW)
+   ==================================================================== */
 .screen {
     width: 100%;
     max-width: 420px;
@@ -35,90 +39,88 @@ body {
 }
 
 .auth-card {
-    background: linear-gradient(145deg, #111216, #181b24);
+    background: linear-gradient(145deg, #121420, #1a1d2e);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 40px 25px;
-    border-radius: 28px;
+    padding: 35px 25px;
+    border-radius: 24px;
     text-align: center;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
     width: 100%;
 }
 
 .auth-logo-container {
     display: flex;
     justify-content: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .cyber-coin-logo {
-    width: 75px;
-    height: 75px;
-    background: linear-gradient(135deg, #ffcc00, #ff9900);
-    color: #fff;
-    font-size: 38px;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #ffcc00, #ff7b00);
+    color: #111;
+    font-size: 32px;
     font-weight: 800;
     display: flex;
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    box-shadow: 0 0 25px rgba(255, 153, 0, 0.35);
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
 }
 
 .auth-card h2 {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
-    margin-bottom: 10px;
-    letter-spacing: 0.5px;
+    margin-bottom: 8px;
 }
 
 .auth-card p {
-    font-size: 13.5px;
+    font-size: 13px;
     color: #8a8f9d;
-    margin-bottom: 30px;
-    line-height: 1.6;
+    margin-bottom: 24px;
+    line-height: 1.5;
 }
 
+/* CRITICAL FIX: Retains structural bounds within the card container */
 .input-group {
-    margin-bottom: 18px;
+    margin-bottom: 15px;
+    width: 100%;
 }
 
 .input-group input {
     width: 100%;
-    padding: 15px 20px;
-    background: #0d0f17;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
+    max-width: 100%;
+    padding: 14px 16px;
+    background: #0d0f18;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
     color: #fff;
     font-size: 14px;
     outline: none;
-    transition: all 0.2s ease;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
 }
 
 .input-group input:focus {
     border-color: #ffcc00;
-    box-shadow: 0 0 12px rgba(255, 204, 0, 0.12);
 }
 
 #login-btn {
     width: 100%;
-    padding: 16px;
-    background: linear-gradient(90deg, #ffcc00, #ff9900);
+    padding: 14px;
+    background: linear-gradient(90deg, #ffcc00, #ff7b00);
     border: none;
-    border-radius: 16px;
-    color: #000;
-    font-size: 15px;
-    font-weight: 700;
+    border-radius: 12px;
+    color: #111;
+    font-size: 14px;
+    font-weight: 800;
     cursor: pointer;
-    transition: all 0.2s ease;
     margin-top: 10px;
 }
 
-#login-btn:active {
-    transform: scale(0.98);
-    opacity: 0.9;
-}
-
-/* PREMIUM WORKSPACE CONTAINER LAYOUT */
+/* ====================================================================
+   3. MAIN WORKSPACE DASHBOARD WRAPPER
+   ==================================================================== */
 #app-container {
     width: 100%;
     max-width: 420px;
@@ -127,69 +129,55 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
-    box-shadow: 0 0 50px rgba(0,0,0,0.6);
 }
 
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
+    padding: 16px 20px;
     background: #0e101a;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    z-index: 10;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 
 .user-meta {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .avatar-icon {
-    width: 34px;
-    height: 34px;
-    background: rgba(255,255,255,0.05);
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.03);
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     color: #ffcc00;
-    border: 1px solid rgba(255,204,0,0.2);
 }
 
 #user-display-name {
     font-size: 14px;
     font-weight: 600;
-    color: #ffffff;
 }
 
 #sync-status {
     font-size: 11px;
     color: #00ff88;
     font-weight: 600;
-    background: rgba(0, 255, 136, 0.06);
-    padding: 4px 10px;
-    border-radius: 20px;
 }
 
 .screen-content {
     flex: 1;
     overflow-y: auto;
-    padding: 24px 20px;
-    padding-bottom: 100px;
+    padding: 20px;
+    padding-bottom: 90px;
 }
 
-/* Custom Scrollbar for Tasks and Lists */
-.screen-content::-webkit-scrollbar {
-    width: 4px;
-}
-.screen-content::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-}
-
-/* MINING SYSTEM VIEW (TAP HUB) */
+/* ====================================================================
+   4. HOME TAB MINING SYSTEM (FIXED TEXT HIGHLIGHT & ENGRAVING EFFECTS)
+   ==================================================================== */
 .balance-wrapper {
     text-align: center;
     margin-top: 10px;
@@ -197,7 +185,7 @@ body {
 
 .balance-label {
     font-size: 11px;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     color: #8a8f9d;
     font-weight: 600;
 }
@@ -206,57 +194,62 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 8px;
+    margin-top: 4px;
 }
 
 #coin-balance-display {
-    font-size: 42px;
+    font-size: 38px;
     font-weight: 800;
-    background: linear-gradient(to right, #ffffff, #e0e0e0);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
 }
 
 .coin-stage {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 45px 0;
+    margin: 40px 0;
     position: relative;
 }
 
+/* CRITICAL FIX: Bulletproof text selection defense layout */
 #tap-coin {
-    width: 220px;
-    height: 220px;
+    width: 200px;
+    height: 200px;
     background: radial-gradient(circle, #ffe680 0%, #ffcc00 50%, #b38600 100%);
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 0 40px rgba(255, 204, 0, 0.3), inset 0 0 20px rgba(255,255,255,0.6);
+    box-shadow: 0 0 30px rgba(255, 204, 0, 0.2), inset 0 0 15px rgba(255,255,255,0.5);
     cursor: pointer;
-    transition: transform 0.05s ease-in-out;
+    transition: transform 0.05s ease;
+    
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 #tap-coin:active {
-    transform: scale(0.94);
+    transform: scale(0.95);
 }
 
+/* CRITICAL FIX: Transforms capital 'O' into a purely non-interactive, deep inset relief engraving style */
 .coin-engraving {
-    font-size: 105px;
+    font-size: 96px;
     font-weight: 800;
-    color: #fff;
-    text-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 -2px 3px rgba(0,0,0,0.4), 0 2px 3px rgba(255,255,255,0.5);
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-/* ENERGY METER MODULE */
 .energy-box {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
-    padding: 18px;
-    border-radius: 20px;
-    margin-top: 20px;
+    background: rgba(255,255,255,0.01);
+    border: 1px solid rgba(255,255,255,0.03);
+    padding: 16px;
+    border-radius: 16px;
 }
 
 .energy-text {
@@ -264,17 +257,13 @@ body {
     justify-content: space-between;
     font-size: 13px;
     color: #8a8f9d;
-    margin-bottom: 10px;
-}
-
-.energy-text strong {
-    color: #ffffff;
+    margin-bottom: 8px;
 }
 
 .progress-bar {
     width: 100%;
-    height: 10px;
-    background: #161824;
+    height: 8px;
+    background: #141622;
     border-radius: 10px;
     overflow: hidden;
 }
@@ -282,85 +271,59 @@ body {
 #progress-fill {
     width: 0%;
     height: 100%;
-    background: linear-gradient(90deg, #ffcc00, #ffaa00);
+    background: linear-gradient(90deg, #ffcc00, #ff7b00);
     border-radius: 10px;
     transition: width 0.1s ease;
 }
 
-/* SECTIONS COMMON CONFIG */
-.section-title {
-    margin-bottom: 25px;
-}
-
+/* ====================================================================
+   5. TASKS / QUEST MODULE INTERFACING
+   ==================================================================== */
 .section-title h2 {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
-    letter-spacing: 0.3px;
 }
 
 .section-title p {
     font-size: 13px;
     color: #8a8f9d;
-    margin-top: 6px;
-    line-height: 1.5;
+    margin-top: 4px;
 }
 
-/* TASKS DYNAMIC CARDS */
+.task-box {
+    margin-top: 20px;
+}
+
 .task-card {
-    background: #111216;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 20px;
-    border-radius: 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    background: #121420;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 18px;
+    border-radius: 16px;
+    margin-bottom: 12px;
 }
 
 .task-card h3 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
-    margin-bottom: 6px;
-    color: #ffffff;
-}
-
-.task-card p {
-    font-size: 13px;
-    color: #8a8f9d;
-    line-height: 1.5;
-    margin-bottom: 14px;
+    margin-bottom: 4px;
 }
 
 .reward-tag {
     color: #ffcc00;
     font-weight: 700;
-    font-size: 14px;
-    margin-bottom: 14px;
-    display: inline-block;
-    background: rgba(255, 204, 0, 0.08);
-    padding: 4px 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,204,0,0.15);
+    font-size: 13px;
+    margin-bottom: 10px;
 }
 
-/* FINANCIAL CARD PREMIUM UI */
+/* ====================================================================
+   6. PREMIUM FINANCIAL INFRASTRUCTURE SYSTEM (TELEBIRR CARD)
+   ==================================================================== */
 .telebirr-card {
-    background: linear-gradient(135deg, #1a52ff 0%, #002db3 100%);
-    padding: 24px;
-    border-radius: 24px;
-    margin-top: 10px;
-    box-shadow: 0 12px 30px rgba(0, 45, 179, 0.35);
-    position: relative;
-    overflow: hidden;
-}
-
-.telebirr-card::before {
-    content: '';
-    position: absolute;
-    width: 150px;
-    height: 150px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50%;
-    top: -40px;
-    right: -40px;
+    background: linear-gradient(135deg, #0052cc 0%, #002266 100%);
+    padding: 20px;
+    border-radius: 20px;
+    margin-top: 15px;
+    box-shadow: 0 10px 25px rgba(0, 34, 102, 0.3);
 }
 
 .card-top {
@@ -371,36 +334,33 @@ body {
 
 .card-brand {
     font-weight: 800;
-    font-size: 20px;
+    font-size: 18px;
     font-style: italic;
     color: #fff;
-    letter-spacing: 0.5px;
 }
 
 .chip {
-    width: 42px;
-    height: 30px;
+    width: 36px;
+    height: 26px;
     background: linear-gradient(135deg, #ffea9f, #d4af37);
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .card-holder {
-    margin: 30px 0 20px 0;
+    margin: 24px 0 16px 0;
 }
 
 .label {
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,0.6);
-    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.5);
 }
 
 .card-holder h3, .card-bottom h3 {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
-    margin-top: 4px;
+    margin-top: 2px;
     letter-spacing: 0.5px;
-    color: #ffffff;
 }
 
 .stats-grid {
@@ -411,10 +371,10 @@ body {
 }
 
 .stat-tile {
-    background: #111216;
-    border: 1px solid rgba(255,255,255,0.05);
-    padding: 18px;
-    border-radius: 18px;
+    background: #121420;
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 16px;
+    border-radius: 16px;
 }
 
 .stat-tile span {
@@ -423,9 +383,9 @@ body {
 }
 
 .stat-tile h2 {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .stat-tile.premium h2 {
@@ -433,121 +393,110 @@ body {
 }
 
 .stat-tile h2 small {
-    font-size: 13px;
+    font-size: 12px;
     color: #8a8f9d;
-    font-weight: 600;
 }
 
-/* LEADERBOARD VIEW */
-.leaderboard-wrapper ol {
-    list-style: none;
-}
-
-/* BOTTOM NAVIGATION NAV CONTROLLER BAR */
+/* ====================================================================
+   7. CORE BOTTOM NAVIGATION FOOTER CONTROLLER BAR
+   ==================================================================== */
 .bottom-nav {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 76px;
+    height: 70px;
     background: #0e101a;
-    border-top: 1px solid rgba(255,255,255,0.04);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    padding: 0 10px;
-    z-index: 10;
+    border-top: 1px solid rgba(255,255,255,0.03);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-btn {
     background: none;
     border: none;
-    color: #5c6273;
+    color: #4e5361;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     cursor: pointer;
-    transition: color 0.2s ease;
+    flex: 1;
 }
 
 .nav-svg {
-    width: 23px;
-    height: 23px;
+    width: 22px;
+    height: 22px;
 }
 
 .nav-text {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .nav-btn.active {
     color: #ffcc00;
 }
 
-/* GLOBAL SYSTEM ALERTS MODAL UI */
+/* ====================================================================
+   8. GLOBAL DIALOG POPUPS & ALERTS MODAL UI
+   ==================================================================== */
 .global-modal {
     position: fixed;
     inset: 0;
-    background: rgba(5, 6, 10, 0.85);
-    backdrop-filter: blur(4px);
+    background: rgba(5, 6, 10, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 2000;
     padding: 20px;
-    animation: fadeIn 0.25s ease-out;
 }
 
 .modal-card {
     width: 100%;
-    max-width: 360px;
-    background: #111216;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 24px;
-    padding: 30px 24px;
+    max-width: 340px;
+    background: #121420;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 24px;
     text-align: center;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-    animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .modal-icon {
-    font-size: 44px;
-    margin-bottom: 12px;
-}
-
-.modal-card h2 {
-    font-size: 20px;
-    font-weight: 700;
-    color: #ffffff;
+    font-size: 40px;
     margin-bottom: 8px;
 }
 
+.modal-card h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
 .modal-card p {
-    font-size: 13.5px;
+    font-size: 13px;
     color: #8a8f9d;
-    line-height: 1.5;
-    margin-bottom: 24px;
+    line-height: 1.4;
+    margin-bottom: 20px;
 }
 
 #modal-btn {
     width: 100%;
-    padding: 14px;
+    padding: 12px;
     background: #ffcc00;
     border: none;
-    border-radius: 14px;
-    color: #000;
+    border-radius: 10px;
+    color: #111;
     font-weight: 700;
     font-size: 14px;
     cursor: pointer;
-    transition: background 0.2s;
 }
 
-#modal-btn:active {
-    transform: scale(0.98);
-}
-
-/* BEHAVIORAL VPN LOCK COVER OVERLAY */
+/* ====================================================================
+   9. OVERLAY COVER ROUTING ENGINE LAYERS (VPN INTERLOCK SCREEN)
+   ==================================================================== */
 .vpn-overlay {
     position: fixed;
     inset: 0;
@@ -555,7 +504,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1500;
+    z-index: 1000;
     padding: 20px;
 }
 
@@ -563,9 +512,9 @@ body {
     width: 100%;
     max-width: 360px;
     background: #111216;
-    border: 2px solid rgba(255, 204, 0, 0.35);
+    border: 2px solid rgba(255, 204, 0, 0.4);
     border-radius: 28px;
-    padding: 35px 24px;
+    padding: 32px 24px;
     text-align: center;
     box-shadow: 0 0 35px rgba(255, 204, 0, 0.15);
 }
@@ -585,40 +534,27 @@ body {
 
 .vpn-card p {
     color: #ffffff;
-    font-size: 14.5px;
+    font-size: 14px;
     line-height: 1.5;
     margin-bottom: 20px;
 }
 
 .vpn-card ul {
     text-align: left;
-    background: rgba(255, 204, 0, 0.04);
+    background: rgba(255, 204, 0, 0.05);
     border-left: 3px solid #ffcc00;
-    padding: 14px 16px;
-    border-radius: 6px;
+    padding: 12px 16px;
+    border-radius: 4px;
     list-style: none;
 }
 
 .vpn-card ul li {
-    color: #e0e0e0;
+    color: #ccc;
     font-size: 13px;
     line-height: 1.6;
     margin-bottom: 6px;
 }
+
 .vpn-card ul li:last-child {
     margin-bottom: 0;
-}
-
-/* FLOATING COIN HIT POPUP TEXT ANIMATION */
-@keyframes floatUp {
-    0% { transform: translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateY(-75px) scale(0.8); opacity: 0; }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; } to { opacity: 1; }
-}
-
-@keyframes scaleUp {
-    from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; }
 }
