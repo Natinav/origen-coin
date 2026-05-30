@@ -1,12 +1,15 @@
 // ====================================================================
-// 1. DATABASE CONNECTION & CONFIG (RESTORE TO ORIGINAL VARIABLE)
+// 1. DATABASE CONNECTION & CONFIG
 // ====================================================================
 const SUPABASE_URL = "https://puaggevlswqumummsokw.supabase.co"; 
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcNsfdmzpqzfvCh7inPYYW1tlo8IVmXlNzJFGQ";
 
 let supabaseClient = null;
 try {
-    if (typeof window.supabase !== 'undefined') {
+    // Robust checks to bind library global reference accurately
+    if (typeof supabase !== 'undefined') {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else if (typeof window.supabase !== 'undefined') {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
         console.warn("Offline fallback framework running.");
@@ -98,8 +101,13 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 // ====================================================================
 if (loginBtn) {
     loginBtn.addEventListener('click', async () => {
-        const name = document.getElementById('login-name').value.trim();
-        const phone = document.getElementById('login-phone').value.trim();
+        const nameInput = document.getElementById('login-name');
+        const phoneInput = document.getElementById('login-phone');
+        
+        if (!nameInput || !phoneInput) return;
+
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
 
         if(!name || !phone) {
             showModal("⚠️", "Validation Check", "Please complete all secure profile fields.", "Dismiss");
@@ -275,6 +283,7 @@ async function renderActiveTask() {
     });
 }
 
+// (Rest of file helper functions remain identical to your backup configuration)
 function runTaskTimer(targetTime, claim, watch, key, task) {
     if (watch) { watch.innerText = "✔ Loop Processing"; watch.style.background = "#0d0f18"; watch.style.color = "#444"; }
     if (taskCountdownTimer) clearInterval(taskCountdownTimer);
@@ -291,9 +300,6 @@ function runTaskTimer(targetTime, claim, watch, key, task) {
     }, 1000);
 }
 
-// ====================================================================
-// 7. SYNC SERVICES & SUB-TABS
-// ====================================================================
 function startAutoSaveTimer() {
     if(autoSaveInterval) clearInterval(autoSaveInterval);
     autoSaveInterval = setInterval(() => { forceCloudDataSave(); }, 5 * 60 * 1000);
