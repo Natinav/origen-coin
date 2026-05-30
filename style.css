@@ -22,9 +22,9 @@ body {
     display: none !important;
 }
 
-/* ========================= */
-/* AUTH & INPUT PROTECTION   */
-/* ========================= */
+/* ====================================================================
+   PREMIUM GLOWING & FLOATING AUTHENTICATION UI
+   ==================================================================== */
 .screen {
     width: 100%;
     max-width: 420px;
@@ -32,35 +32,50 @@ body {
 }
 
 .auth-card {
-    background: linear-gradient(145deg, #121420, #1a1d2e);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 35px 25px;
-    border-radius: 24px;
+    background: linear-gradient(145deg, #111322, #16192b);
+    border: 1px solid rgba(255, 204, 0, 0.15); /* Sleek accent border tint */
+    padding: 40px 25px;
+    border-radius: 28px;
     text-align: center;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 204, 0, 0.03);
     width: 100%;
 }
 
 .auth-logo-container {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
+/* Premium Floating & Custom Neon Glow Frame Elements */
 .cyber-coin-logo {
-    width: 64px;
-    height: 64px;
-    background: linear-gradient(135deg, #ffcc00, #ff7b00);
-    color: #111;
-    font-size: 32px;
+    width: 76px;
+    height: 76px;
+    background: linear-gradient(135deg, #ffe680 0%, #ff9900 100%);
+    color: #090a10;
+    font-size: 38px;
     font-weight: 800;
     display: flex;
     justify-content: center;
     align-items: center;
     border-radius: 50%;
+    box-shadow: 0 0 25px rgba(255, 204, 0, 0.6), inset 0 0 12px rgba(255, 255, 255, 0.6);
 }
 
-/* FIXED BOX OVERFLOW PREVENTER RULES */
+.animate-glow {
+    animation: floatOverlay 3s ease-in-out infinite, pulseGlow 3s ease-in-out infinite;
+}
+
+@keyframes floatOverlay {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 204, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.5); }
+    50% { box-shadow: 0 0 35px rgba(255, 204, 0, 0.7), inset 0 0 16px rgba(255, 255, 255, 0.7); }
+}
+
 .input-group {
     margin-bottom: 16px;
     width: 100%;
@@ -76,7 +91,12 @@ body {
     color: #fff;
     font-size: 14px;
     outline: none;
-    box-sizing: border-box; /* Includes fields within parent card boundary limits */
+    box-sizing: border-box;
+    transition: border 0.2s ease;
+}
+
+.input-group input:focus {
+    border: 1px solid #ffcc00;
 }
 
 #login-btn {
@@ -88,11 +108,13 @@ body {
     color: #111;
     font-weight: 800;
     cursor: pointer;
+    font-size: 15px;
+    box-shadow: 0 4px 15px rgba(255, 123, 0, 0.2);
 }
 
-/* ========================= */
-/* DASHBOARD LAYOUT & HEADERS */
-/* ========================= */
+/* ====================================================================
+   DASHBOARD LAYOUT & NATIVE SECTIONS
+   ==================================================================== */
 #app-container {
     width: 100%;
     max-width: 420px;
@@ -130,12 +152,19 @@ body {
     padding-bottom: 90px;
 }
 
-/* ========================= */
-/* TAP COIN METALLIC ENGRAVE */
-/* ========================= */
+/* ====================================================================
+   TAP COIN METALLIC ENGRAVE
+   ==================================================================== */
 .balance-wrapper {
     text-align: center;
     margin-top: 10px;
+}
+
+.balance-label {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: #8e8e9a;
+    margin-bottom: 4px;
 }
 
 .main-balance {
@@ -170,7 +199,6 @@ body {
     transform: scale(0.95);
 }
 
-/* Turns 'O' from selectable word into solid unselectable artwork background */
 .coin-engraving {
     font-size: 100px;
     font-weight: 800;
@@ -184,6 +212,18 @@ body {
     background: #121420;
     padding: 16px;
     border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.02);
+}
+
+.energy-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #8e8e9a;
+}
+
+.energy-text strong {
+    color: #fff;
 }
 
 .progress-bar {
@@ -201,27 +241,36 @@ body {
     background: linear-gradient(90deg, #ffcc00, #ff7b00);
 }
 
-/* ========================= */
-/* PREMIUM WALLET / TELEBIRR */
-/* ========================= */
+/* ====================================================================
+   PREMIUM FINANCIAL WALLET / TELEBIRR CARD
+   ==================================================================== */
+.section-title h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.section-title p { font-size: 13px; color: #8e8e9a; }
+
 .telebirr-card {
     background: linear-gradient(135deg, #0052cc 0%, #002266 100%);
     padding: 20px;
     border-radius: 20px;
     margin-top: 20px;
+    box-shadow: 0 10px 25px rgba(0, 82, 204, 0.15);
 }
 
 .card-top { display: flex; justify-content: space-between; align-items: center; }
-.card-brand { font-weight: 800; color: #fff; font-style: italic; }
+.card-brand { font-weight: 800; color: #fff; font-style: italic; font-size: 16px; }
 .chip { width: 34px; height: 24px; background: #ffe280; border-radius: 4px; }
 .card-holder { margin: 20px 0; }
-.label { font-size: 10px; color: rgba(255,255,255,0.5); }
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-.stat-tile { background: #121420; padding: 14px; border-radius: 12px; }
+.label { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; }
+.card-holder h3, .card-bottom h3 { font-size: 16px; font-weight: 600; margin-top: 2px; }
 
-/* ========================= */
-/* FOOTER SYSTEM NAVIGATION */
-/* ========================= */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+.stat-tile { background: #121420; padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.02); }
+.stat-tile span { font-size: 11px; color: #8e8e9a; }
+.stat-tile h2 { font-size: 18px; font-weight: 700; margin-top: 4px; }
+.stat-tile.premium h2 { color: #00ff88; }
+
+/* ====================================================================
+   SYSTEM FOOTER NAVIGATION
+   ==================================================================== */
 .bottom-nav {
     position: absolute;
     bottom: 0; left: 0; width: 100%; height: 70px;
@@ -232,10 +281,15 @@ body {
 
 .nav-btn { background: none; border: none; color: #4e5361; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex: 1; }
 .nav-svg { width: 22px; height: 22px; }
-.nav-text { font-size: 11px; }
+.nav-text { font-size: 11px; font-weight: 500; }
 .nav-btn.active { color: #ffcc00; }
 
-/* MODALS & VPN OVERLAYS */
-.global-modal, .vpn-overlay { position: fixed; inset: 0; background: rgba(5,6,10,0.9); display: flex; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
-.modal-card, .vpn-card { width: 100%; max-width: 340px; background: #121420; border-radius: 20px; padding: 24px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-#modal-btn { width: 100%; padding: 12px; background: #ffcc00; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 15px; }
+/* ====================================================================
+   MODALS & OVERLAYS SYSTEM
+   ==================================================================== */
+.global-modal, .vpn-overlay { position: fixed; inset: 0; background: rgba(5,6,10,0.92); display: flex; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+.modal-card, .vpn-card { width: 100%; max-width: 340px; background: #121420; border-radius: 20px; padding: 24px; text-align: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+.modal-icon { font-size: 40px; margin-bottom: 10px; }
+.modal-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.modal-card p { font-size: 13px; color: #8e8e9a; line-height: 1.5; }
+#modal-btn { width: 100%; padding: 12px; background: #ffcc00; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 18px; font-size: 14px; color: #111; }
