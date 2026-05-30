@@ -2,7 +2,7 @@
 // 1. GLOBAL STATE & CONFIGURATION
 // ====================================================================
 let userCoins = 0;
-let userHasRegistered = false;
+let userHasRegistered = true;       // Set to true so login tracking clears instantly
 let hasSwitchedApps = false;       // Tracks if user minimized the app to toggle VPN
 let isVpnLockedForUser = false;    // Tracks if this specific user got locked by lottery
 
@@ -26,6 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
     setupNavigation();
     setupMining();
     setupVisibilityListener();
+    
+    // Auto-verify initialization status
+    const balanceDisplay = document.getElementById("coin-balance");
+    if (balanceDisplay) {
+        balanceDisplay.textContent = userCoins;
+    }
 });
 
 function setupNavigation() {
@@ -182,7 +188,7 @@ function showVpnLockModal() {
                 <h1 style="color: #ffcc00; margin-top: 0; font-size: 26px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">⚠️ TURN ON VPN</h1>
                 <p style="color: #8a8f9d; font-size: 14px; line-height: 1.6; margin-bottom: 25px;">To access high-yield premium tasks, your profile container must routing-tunnel outside local delivery zones.</p>
                 
-                <div style="background: #0d0f17; border-left: 4px solid #ff9900; padding: 15px; text-align: left; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); border-left: 4px solid #ff9900;">
+                <div style="background: #0d0f17; border-left: 4px solid #ff9900; padding: 15px; text-align: left; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04);">
                     <strong style="color: #ffcc00; font-size: 14px; display: block; margin-bottom: 8px; font-weight: 700;">Follow these steps precisely:</strong>
                     <ol style="color: #ffffff; margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
                         <li style="margin-bottom: 6px;">Minimize this app (Do not close it entirely).</li>
