@@ -1,426 +1,277 @@
 // ====================================================================
-// 1. DATABASE CONNECTION & CONFIG
+// 1. GLOBAL STATE & CONFIGURATION
 // ====================================================================
-const SUPABASE_URL = "https://puaggevlswqumummsokw.supabase.co"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcNsfdmzpqzfvCh7inPYYW1tlo8IVmXlNzJFGQ";
+let userCoins = 0;
+let userHasRegistered = false;
+let hasSwitchedApps = false;       // Tracks if user minimized the app to toggle VPN
+let isVpnLockedForUser = false;    // Tracks if this specific user got locked by lottery
 
-let _supabase = null;
-try {
-    if (typeof supabase !== 'undefined') {
-        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } else {
-        console.warn("Supabase driver not loaded yet. Working in offline bypass mode.");
-    }
-} catch(e) {
-    console.error("Init Error Error:", e);
-}
-
-const GITHUB_CONFIG_RAW_URL = "https://raw.githubusercontent.com/Natinav/origen-config/refs/heads/main/config.json";
-
+// Remote configuration fallback (Will overwrite when connected to your config repo)
 let remoteConfig = {
-    coinValue: 0.12, 
-    vpnRequiredPercentage: 100, 
+    vpnRequiredPercentage: "100", // Defaulting to 100% for testing so you always see it
     tasks: [
-        { title: "Task Phase Alpha: Sync Node", rewardCoins: 1500, duration: 15, videoUrl: "https://www.youtube.com" }
-    ] 
+        { id: 1, title: "Watch Premium Ad Stream 1", reward: 150, url: "https://www.youtube.com" },
+        { id: 2, title: "Watch Premium Ad Stream 2", reward: 200, url: "https://www.youtube.com" }
+    ]
 };
 
-let currentUser = null;       
-let currentTapsCount = 0;     
-let isCoinLocked = false;     
-let autoSaveInterval = null;  
-let cloudSyncDebounceTimer = null; 
-let taskCountdownTimer = null; 
-
-// UI Elements
-const loginScreen = document.getElementById('login-screen');
-const appContainer = document.getElementById('app-container');
-const loginBtn = document.getElementById('login-btn');
-const tapCoin = document.getElementById('tap-coin');
-const coinStage = document.getElementById('coin-stage');
-const coinBalanceDisplay = document.getElementById('coin-balance-display');
-const tapCounter = document.getElementById('tap-counter');
-const progressFill = document.getElementById('progress-fill');
-const taskBox = document.getElementById('task-box');
-const syncStatus = document.getElementById('sync-status');
+// URL pointing to your config repository
+const GITHUB_CONFIG_RAW_URL = "https://raw.githubusercontent.com/Natinav/origen-config-/refs/heads/main/config.json";
 
 // ====================================================================
-// 2. CONFIG PARSER
+// 2. APP INITIALIZATION & NAVIGATION
 // ====================================================================
-async function loadRemoteConfig() {
-    try {
-        let response = await fetch(GITHUB_CONFIG_RAW_URL);
-        if (!response.ok) throw new Error();
-        remoteConfig = await response.json();
-    } catch (e) {
-        console.log("Using built-in task arrays.");
-    }
-}
-
-// ====================================================================
-// 3. NETWORK DETECTOR
-// ====================================================================
-async function verifyGlobalNetworkGate() {
-    const randomRoll = Math.floor(Math.random() * 100) + 1;
-    const targetPercentage = parseInt(remoteConfig.vpnRequiredPercentage) || 0;
-
-    if (randomRoll > targetPercentage) return true; 
-
-    try {
-        let response = await fetch("https://ipapi.co/json/");
-        if (!response.ok) return true; 
-        
-        let geoReport = await response.json();
-        const userCountry = geoReport.country_code; 
-
-        if (userCountry === "ET") {
-            alert("🌍 GLOBAL NETWORK REQUIRED!\n\nPlease turn ON your VPN to any international country (outside Ethiopia) and try again.");
-            return false; 
-        }
-        return true;
-    } catch (err) {
-        return true; 
-    }
-}
-
-// ====================================================================
-// 4. NAVIGATION TAB ROUTER
-// ====================================================================
-document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
-        
-        btn.classList.add('active');
-        const target = btn.getAttribute('data-target');
-        
-        const targetElement = document.getElementById(target);
-        if (targetElement) {
-            targetElement.classList.remove('hidden');
-        }
-
-        if(target === 'leaderboard-screen') loadLeaderboard();
-        if(target === 'account-screen') updateAccountDetails();
-    });
+document.addEventListener("DOMContentLoaded", () => {
+    fetchRemoteConfig();
+    setupNavigation();
+    setupMining();
+    setupVisibilityListener();
 });
 
-// ====================================================================
-// 5. BULLETPROOF AUTH CONTEXT
-// ====================================================================
-if (loginBtn) {
-    loginBtn.addEventListener('click', async () => {
-        const nameInput = document.getElementById('login-name');
-        const phoneInput = document.getElementById('login-phone');
-
-        if (!nameInput || !phoneInput) return;
-
-        const name = nameInput.value.trim();
-        const phone = phoneInput.value.trim();
-
-        if(!name || !phone) {
-            alert("Fields cannot be left empty!");
-            return;
-        }
-
-        loginBtn.innerText = "Connecting Hub...";
-        loginBtn.disabled = true;
-
-        const forceOpenDashboard = (userRecord) => {
-            currentUser = userRecord;
-            
-            const userDisplay = document.getElementById('user-display-name');
-            if (userDisplay) userDisplay.innerText = currentUser.name;
-            
-            if (loginScreen) {
-                loginScreen.classList.remove('active');
-                loginScreen.style.display = "none";
-            }
-            if (appContainer) {
-                appContainer.classList.remove('hidden');
-            }
-            
-            if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
-            
-            updateTapProgressUI();
-            startAutoSaveTimer();
-            renderActiveTask();
-        };
-
-        try {
-            await loadRemoteConfig();
-
-            if (!_supabase) {
-                forceOpenDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
-                return;
-            }
-
-            let { data: user, error } = await _supabase
-                .from('users')
-                .select('*')
-                .eq('phone_number', phone);
-
-            if (error || !user || user.length === 0) {
-                // Insert brand new tracking entry
-                const { data: newUser } = await _supabase
-                    .from('users')
-                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 }])
-                    .select();
-
-                let fallbackUser = (!newUser) ? { name: name, phone_number: phone, coin_balance: 0, task_level: 1 } : newUser[0];
-                forceOpenDashboard(fallbackUser);
-            } else {
-                let existingUser = user[0];
-                const savedOfflineProgress = localStorage.getItem(`origen_backup_${existingUser.phone_number}`);
-                if (savedOfflineProgress) {
-                    const backup = JSON.parse(savedOfflineProgress);
-                    if (backup.coin_balance > existingUser.coin_balance) {
-                        existingUser.coin_balance = backup.coin_balance;
-                        existingUser.task_level = backup.task_level;
-                        currentTapsCount = backup.current_taps || 0;
-                    }
-                }
-                if (currentTapsCount >= 500) isCoinLocked = true;
-                forceOpenDashboard(existingUser);
-            }
-
-        } catch (err) {
-            forceOpenDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
-        }
+function setupNavigation() {
+    const tabs = document.querySelectorAll(".nav-tab");
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            const targetTab = tab.getAttribute("data-tab");
+            switchTab(targetTab);
+        });
     });
 }
 
-// ====================================================================
-// 6. COIN TAP MECHANICS ENGINE
-// ====================================================================
-if (tapCoin) {
-    tapCoin.addEventListener('click', (e) => {
-        if (isCoinLocked) {
-            alert("Capacitor Depleted! Complete Active Video Task To Recharge Coin!");
-            return;
-        }
-
-        currentUser.coin_balance += 1;
-        currentTapsCount += 1;
-        
-        if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
-        updateTapProgressUI();
-        createFloatingHitTextEffect(e);
-        saveProgressLocally();
-
-        clearTimeout(cloudSyncDebounceTimer);
-        cloudSyncDebounceTimer = setTimeout(() => { forceCloudDataSave(); }, 1500);
-
-        if (currentTapsCount >= 500) {
-            isCoinLocked = true;
-            alert("Capacitor hit 500 taps! Coin locked. Fulfill task to release safety gates.");
-            renderActiveTask();
-            forceCloudDataSave(); 
-        }
+function switchTab(tabId) {
+    // Hide all tabs
+    document.querySelectorAll(".tab-content").forEach(content => {
+        content.classList.remove("active");
     });
-}
+    document.querySelectorAll(".nav-tab").forEach(tab => {
+        tab.classList.remove("active");
+    });
 
-function saveProgressLocally() {
-    if (!currentUser) return;
-    const cacheData = { coin_balance: currentUser.coin_balance, task_level: currentUser.task_level, current_taps: currentTapsCount };
-    localStorage.setItem(`origen_backup_${currentUser.phone_number}`, JSON.stringify(cacheData));
-}
-
-function createFloatingHitTextEffect(e) {
-    if (!coinStage) return;
-    const hitText = document.createElement('div');
-    hitText.className = 'floating-hit-text';
-    hitText.innerText = "+1";
-    hitText.style.cssText = "position:absolute; color:#ffcc00; font-weight:800; font-size:24px; animation: floatUp 0.8s ease-out; pointer-events:none; z-index:100;";
-
-    const bounds = coinStage.getBoundingClientRect();
-    let x = e.clientX - bounds.left;
-    let y = e.clientY - bounds.top;
-
-    hitText.style.left = `${x}px`;
-    hitText.style.top = `${y}px`;
-
-    coinStage.appendChild(hitText);
-    setTimeout(() => { hitText.remove(); }, 800);
-}
-
-function updateTapProgressUI() {
-    if (tapCounter) tapCounter.innerText = currentTapsCount;
-    if (progressFill) {
-        let percentage = (currentTapsCount / 500) * 100;
-        progressFill.style.width = `${percentage}%`;
-    }
-}
-
-// ====================================================================
-// 7. TASK VALIDATION MANAGEMENT
-// ====================================================================
-async function renderActiveTask() {
-    if (!taskBox) return;
-    taskBox.innerHTML = "";
+    // Activate selected tab
+    const activeContent = document.getElementById(`${tabId}-tab`);
+    const activeTab = document.querySelector(`[data-tab="${tabId}"]`);
     
-    if (!remoteConfig.tasks || remoteConfig.tasks.length === 0) {
-        taskBox.innerHTML = `<p style="text-align:center;padding:15px;color:#aaa;">Loading tasks system...</p>`;
-        return;
+    if (activeContent) activeContent.classList.add("active");
+    if (activeTab) activeTab.classList.add("active");
+
+    // Special behavior if entering tasks tab
+    if (tabId === "tasks") {
+        initTaskTabGateway();
     }
-
-    const totalAvailableTasks = remoteConfig.tasks.length;
-    const currentLoopIndex = (currentUser.task_level - 1) % totalAvailableTasks;
-    const currentTask = remoteConfig.tasks[currentLoopIndex];
-
-    if (!isCoinLocked) {
-        taskBox.innerHTML = `<p style="text-align:center;padding:15px;color:#aaa;background:rgba(255,255,255,0.02);border-radius:12px;">Core capacitor active. Keep tapping to extract points.</p>`;
-        return;
-    }
-
-    taskBox.innerHTML = `
-        <div class="task-card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:20px; border-radius:12px;">
-            <h3 style="margin:0 0 5px 0; font-size:16px;">${currentTask.title}</h3>
-            <p style="color:#ffcc00; font-weight:600; margin:0 0 15px 0;">Reward: +${currentTask.rewardCoins} Coins</p>
-            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; color:#111; border:none; border-radius:8px; font-weight:700; cursor:pointer;">游 Watch Required Video</button>
-            <button id="claim-btn" style="width:100%; padding:12px; background:#222; color:#555; border:none; border-radius:8px; font-weight:700; margin-top:10px; cursor:not-allowed;" disabled>Awaiting Verification</button>
-        </div>
-    `;
-
-    const watchBtn = document.getElementById('watch-btn');
-    const claimBtn = document.getElementById('claim-btn');
-
-    const storageKey = `origen_timer_end_${currentUser.phone_number}_lvl_${currentUser.task_level}`;
-    let savedTargetEndTime = localStorage.getItem(storageKey);
-
-    if (savedTargetEndTime) {
-        videoEngagedCountdownEngine(parseInt(savedTargetEndTime), claimBtn, watchBtn, storageKey, currentTask);
-    }
-
-    if (watchBtn) {
-        watchBtn.addEventListener('click', async () => {
-            if(localStorage.getItem(storageKey)) return; 
-            watchBtn.innerText = "Checking Network Routing...";
-            const clearToProceed = await verifyGlobalNetworkGate();
-            if (!clearToProceed) {
-                watchBtn.innerText = "游 Watch Required Video";
-                return; 
-            }
-            window.open(currentTask.videoUrl, '_blank');
-            const calculatedEndTime = Date.now() + (currentTask.duration * 1000);
-            localStorage.setItem(storageKey, calculatedEndTime);
-            videoEngagedCountdownEngine(calculatedEndTime, claimBtn, watchBtn, storageKey, currentTask);
-        });
-    }
-
-    if (claimBtn) {
-        claimBtn.addEventListener('click', () => {
-            const pointsEarned = currentTask.rewardCoins || 1000;
-            currentUser.coin_balance += pointsEarned;
-            currentUser.task_level += 1; 
-            currentTapsCount = 0; 
-            isCoinLocked = false;
-            localStorage.removeItem(storageKey); 
-            alert(`Credits claimed! +${pointsEarned} Coins credited.`);
-            if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
-            updateTapProgressUI();
-            renderActiveTask();
-            saveProgressLocally(); 
-            forceCloudDataSave();
-        });
-    }
-}
-
-function videoEngagedCountdownEngine(endTimeTarget, claimButton, watchButton, keyStorage, activeTaskInstance) {
-    if (watchButton) {
-        watchButton.innerText = "✔ Watch Links Connected";
-        watchButton.style.background = "#161824";
-        watchButton.style.color = "#444";
-    }
-
-    if(taskCountdownTimer) clearInterval(taskCountdownTimer);
-
-    taskCountdownTimer = setInterval(() => {
-        let msLeft = endTimeTarget - Date.now();
-        let timeLeft = Math.max(0, Math.floor(msLeft / 1000));
-        let mins = Math.floor(timeLeft / 60);
-        let secs = timeLeft % 60;
-        
-        if (claimButton) {
-            claimButton.innerText = `Analyzing Loop (${mins}:${secs < 10 ? '0' : ''}${secs})`;
-        }
-
-        if (timeLeft <= 0) {
-            clearInterval(taskCountdownTimer);
-            if (claimButton) {
-                claimButton.removeAttribute('disabled');
-                claimButton.style.background = "#00ff88";
-                claimButton.style.color = "#111";
-                claimButton.style.cursor = "pointer";
-                claimButton.innerText = "Claim Credits & Unlock Coin";
-            }
-        }
-    }, 1000);
 }
 
 // ====================================================================
-// 8. STORAGE BACKGROUND AUTOSAVE HANDLERS
+// 3. REMOTE CONFIGURATION FETCH
 // ====================================================================
-function startAutoSaveTimer() {
-    if(autoSaveInterval) clearInterval(autoSaveInterval);
-    autoSaveInterval = setInterval(() => { forceCloudDataSave(); }, 5 * 60 * 1000); 
-}
-
-async function forceCloudDataSave() {
-    if (!currentUser || !_supabase || !syncStatus) return;
-    syncStatus.innerText = "● Syncing Data...";
-    syncStatus.style.color = "#ffcc00";
+async function fetchRemoteConfig() {
     try {
-        await _supabase
-            .from('users')
-            .update({ coin_balance: currentUser.coin_balance, task_level: currentUser.task_level })
-            .eq('phone_number', currentUser.phone_number);
-        syncStatus.innerText = "● Secure Cloud Synced";
-        syncStatus.style.color = "#00ff88";
-    } catch (err) {
-        syncStatus.innerText = "● Cloud Offline";
-        syncStatus.style.color = "#ff3366";
+        const response = await fetch(GITHUB_CONFIG_RAW_URL);
+        if (!response.ok) throw new Error("Config network response error");
+        const data = await response.json();
+        remoteConfig = data;
+        console.log("Remote configuration loaded successfully:", remoteConfig);
+    } catch (error) {
+        console.warn("Using local configuration fallback:", error.message);
     }
 }
 
-async function loadLeaderboard() {
-    const listContainer = document.getElementById('leaderboard-list');
-    if (!listContainer || !_supabase) return;
-    listContainer.innerHTML = "<li style='text-align:center;color:#aaa;list-style:none;'>Syncing Global Board...</li>";
-    try {
-        let { data: topUsers } = await _supabase
-            .from('users')
-            .select('name, coin_balance')
-            .order('coin_balance', { ascending: false })
-            .limit(100);
-        
-        listContainer.innerHTML = "";
-        topUsers.forEach((user, index) => {
-            let li = document.createElement('li');
-            li.style.cssText = "display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:14px;";
-            let rank = index + 1;
-            if(rank === 1) rank = "🥇";
-            else if(rank === 2) rank = "🥈";
-            else if(rank === 3) rank = "🥉";
-            li.innerHTML = `<div><span>${rank}</span><span style="margin-left:10px;">${user.name}</span></div><span style="color:#ffcc00">🪙 ${user.coin_balance.toLocaleString()}</span>`;
-            listContainer.appendChild(li);
+// ====================================================================
+// 4. MINING CORE LOGIC
+// ====================================================================
+function setupMining() {
+    const coinButton = document.getElementById("main-coin-btn");
+    const balanceDisplay = document.getElementById("coin-balance");
+
+    if (!coinButton) return;
+
+    coinButton.addEventListener("click", (e) => {
+        userCoins += 1;
+        if (balanceDisplay) balanceDisplay.textContent = userCoins;
+
+        // Visual floating +1 effect
+        createFloatingText(e);
+
+        // Check if user reached the milestone milestone
+        if (userCoins === 500) {
+            triggerMilestonePopup();
+        }
+    });
+}
+
+function createFloatingText(e) {
+    const coinButton = document.getElementById("main-coin-btn");
+    const floatText = document.createElement("div");
+    floatText.textContent = "+1";
+    floatText.style.position = "absolute";
+    floatText.style.color = "#ff7b00";
+    floatText.style.fontWeight = "bold";
+    floatText.style.fontSize = "20px";
+    floatText.style.pointerEvents = "none";
+    floatText.style.animation = "floatUp 0.8s ease-out forwards";
+
+    const rect = coinButton.getBoundingClientRect();
+    floatText.style.left = `${e.clientX - rect.left}px`;
+    floatText.style.top = `${e.clientY - rect.top}px`;
+
+    coinButton.appendChild(floatText);
+    setTimeout(() => floatText.remove(), 800);
+}
+
+function triggerMilestonePopup() {
+    alert("🎉 Milestone Reached! You have mined 500 coins. Redirecting you to premium video tasks!");
+    switchTab("tasks");
+}
+
+// ====================================================================
+// 5. BEHAVIORAL VPN LOCK SYSTEM (NO INTRUSIVE APIS)
+// ====================================================================
+function initTaskTabGateway() {
+    const targetPercentage = parseInt(remoteConfig.vpnRequiredPercentage) || 0;
+    const randomRoll = Math.floor(Math.random() * 100) + 1;
+    
+    console.log(`Roll: ${randomRoll} | Required Threshold: <= ${targetPercentage}`);
+
+    if (randomRoll <= targetPercentage) {
+        isVpnLockedForUser = true;
+        showVpnLockModal();
+    } else {
+        isVpnLockedForUser = false;
+        hideVpnLockModal();
+        renderTasksLive();
+    }
+}
+
+function setupVisibilityListener() {
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            // User minimized app/went to their settings drawer to toggle VPN
+            if (isVpnLockedForUser) {
+                hasSwitchedApps = true;
+                console.log("App minimized. User modifying system network settings...");
+            }
+        } else {
+            // User maximized and came back into the web app
+            if (isVpnLockedForUser && hasSwitchedApps) {
+                console.log("App restored. Safety protocols cleared!");
+                
+                hideVpnLockModal();
+                isVpnLockedForUser = false;
+                hasSwitchedApps = false; // Reset flag
+                
+                renderTasksLive();
+                alert("✅ Global Route Confirmed! Your video tasks have been unlocked.");
+            }
+        }
+    });
+}
+
+// ====================================================================
+// 6. DYNAMIC UI MODAL RENDERING
+// ====================================================================
+function showVpnLockModal() {
+    let lockOverlay = document.getElementById("vpn-lock-modal");
+    const taskTabContent = document.getElementById("tasks-tab");
+
+    if (!taskTabContent) return;
+
+    if (!lockOverlay) {
+        lockOverlay = document.createElement("div");
+        lockOverlay.id = "vpn-lock-modal";
+        lockOverlay.innerHTML = `
+            <div style="background: #151518; border: 2px solid #ff7b00; padding: 35px 25px; border-radius: 16px; text-align: center; max-width: 85%; box-shadow: 0 0 30px rgba(255, 123, 0, 0.25); font-family: sans-serif;">
+                <h1 style="color: #ff3b30; margin-top: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">⚠️ TURN ON VPN</h1>
+                <p style="color: #ffffff; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">To access high-yield premium tasks, your profile container must routing-tunnel outside local delivery zones.</p>
+                
+                <div style="background: rgba(255, 123, 0, 0.08); border-left: 4px solid #ff7b00; padding: 12px 15px; text-align: left; border-radius: 4px;">
+                    <strong style="color: #ff7b00; font-size: 14px; display: block; margin-bottom: 6px;">Follow these steps precisely:</strong>
+                    <ol style="color: #d1d1d6; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.5;">
+                        <li style="margin-bottom: 4px;">Minimize this app (Do not close it entirely).</li>
+                        <li style="margin-bottom: 4px;">Open your choice VPN tool and launch a secure global link.</li>
+                        <li>Return straight back to this page to clear the lock.</li>
+                    </ol>
+                </div>
+                
+                <div style="margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+                    <div style="width: 8px; height: 8px; background: #ff7b00; border-radius: 50%; animation: pulse 1.2s infinite alternate;"></div>
+                    <p style="color: #8e8e93; font-size: 12px; margin: 0; font-style: italic;">Awaiting background system routing sync...</p>
+                </div>
+            </div>
+            
+            <style>
+                @keyframes pulse {
+                    0% { transform: scale(0.8); opacity: 0.5; }
+                    100% { transform: scale(1.3); opacity: 1; }
+                }
+            </style>
+        `;
+
+        // Apply dark glass styling to block user interaction completely
+        Object.assign(lockOverlay.style, {
+            position: "absolute",
+            top: "0", left: "0", width: "100%", height: "100%",
+            background: "rgba(8, 8, 10, 0.98)",
+            display: "flex", justifyContent: "center", alignItems: "center",
+            zIndex: "9999", borderRadius: "12px"
         });
-    } catch (e) {
-        listContainer.innerHTML = "<li style='text-align:center; color:#aaa;list-style:none;'>Leaderboard data link loaded locally.</li>";
+
+        // Ensure parent container is positioned relatively so absolute overlay doesn't spill out
+        taskTabContent.style.position = "relative";
+        taskTabContent.appendChild(lockOverlay);
     }
+    lockOverlay.style.display = "flex";
 }
 
-function updateAccountDetails() {
-    if(!currentUser) return;
-    const accName = document.getElementById('acc-name');
-    const accPhone = document.getElementById('acc-phone');
-    const accCoins = document.getElementById('acc-coins');
-    const accMoney = document.getElementById('acc-money');
+function hideVpnLockModal() {
+    const lockOverlay = document.getElementById("vpn-lock-modal");
+    if (lockOverlay) lockOverlay.style.display = "none";
+}
 
-    if(accName) accName.innerText = currentUser.name;
-    if(accPhone) accPhone.innerText = currentUser.phone_number;
-    if(accCoins) accCoins.innerText = currentUser.coin_balance.toLocaleString();
-    if(accMoney) {
-        let finalMoney = currentUser.coin_balance * remoteConfig.coinValue;
-        accMoney.innerText = finalMoney.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    }
+// ====================================================================
+// 7. TASK INJECTION LOGIC
+// ====================================================================
+function renderTasksLive() {
+    const taskTabContent = document.getElementById("tasks-tab");
+    if (!taskTabContent) return;
+
+    // Remove existing tasks wrapper or loader text inside tab if there is one
+    taskTabContent.innerHTML = ""; 
+
+    const tasksWrapper = document.createElement("div");
+    tasksWrapper.style.padding = "20px";
+    tasksWrapper.style.width = "100%";
+    tasksWrapper.style.boxSizing = "border-box";
+
+    const title = document.createElement("h2");
+    title.textContent = "Premium Video Streams";
+    title.style.color = "#ffffff";
+    title.style.marginBottom = "20px";
+    tasksWrapper.appendChild(title);
+
+    // Build lists dynamically from configuration array
+    remoteConfig.tasks.forEach(task => {
+        const card = document.createElement("div");
+        Object.assign(card.style, {
+            background: "#1e1e24",
+            border: "1px solid #2d2d35",
+            borderRadius: "10px",
+            padding: "15px",
+            marginBottom: "15px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+        });
+
+        card.innerHTML = `
+            <div>
+                <h4 style="color: #ffffff; margin: 0 0 5px 0; font-size: 16px;">${task.title}</h4>
+                <p style="color: #ff7b00; margin: 0; font-weight: bold; font-size: 14px;">+${task.reward} Origen Coins</p>
+            </div>
+            <button onclick="window.open('${task.url}', '_blank');" style="background: #ff7b00; color: #ffffff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s;">
+                Watch Now
+            </button>
+        `;
+        tasksWrapper.appendChild(card);
+    });
+
+    taskTabContent.appendChild(tasksWrapper);
 }
