@@ -1,747 +1,426 @@
-/* ================================================= */
-/* CONFIG */
-/* ================================================= */
+// ====================================================================
+// 1. DATABASE CONNECTION & CONFIG
+// ====================================================================
+const SUPABASE_URL = "https://puaggevlswqumummsokw.supabase.co"; 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcNsfdmzpqzfvCh7inPYYW1tlo8IVmXlNzJFGQ";
 
-const SUPABASE_URL =
-"https://puaggevlswqumummsokw.supabase.co";
+let _supabase = null;
+try {
+    if (typeof supabase !== 'undefined') {
+        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else {
+        console.warn("Supabase driver not loaded yet. Working in offline bypass mode.");
+    }
+} catch(e) {
+    console.error("Init Error Error:", e);
+}
 
-const SUPABASE_KEY =
-"YOUR_ANON_KEY_HERE";
+const GITHUB_CONFIG_RAW_URL = "https://raw.githubusercontent.com/Natinav/origen-config/refs/heads/main/config.json";
 
-const GITHUB_CONFIG =
-"https://raw.githubusercontent.com/Natinav/origen-config/refs/heads/main/config.json";
-
-const supabase =
-window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
-
-/* ================================================= */
-/* STATE */
-/* ================================================= */
-
-let config = {
-    coinValue: 0.05,
-    vpnRequiredPercentage: 100,
-    tasks:[]
+let remoteConfig = {
+    coinValue: 0.12, 
+    vpnRequiredPercentage: 100, 
+    tasks: [
+        { title: "Task Phase Alpha: Sync Node", rewardCoins: 1500, duration: 15, videoUrl: "https://www.youtube.com" }
+    ] 
 };
 
-let currentUser = null;
+let currentUser = null;       
+let currentTapsCount = 0;     
+let isCoinLocked = false;     
+let autoSaveInterval = null;  
+let cloudSyncDebounceTimer = null; 
+let taskCountdownTimer = null; 
 
-let coins = 0;
+// UI Elements
+const loginScreen = document.getElementById('login-screen');
+const appContainer = document.getElementById('app-container');
+const loginBtn = document.getElementById('login-btn');
+const tapCoin = document.getElementById('tap-coin');
+const coinStage = document.getElementById('coin-stage');
+const coinBalanceDisplay = document.getElementById('coin-balance-display');
+const tapCounter = document.getElementById('tap-counter');
+const progressFill = document.getElementById('progress-fill');
+const taskBox = document.getElementById('task-box');
+const syncStatus = document.getElementById('sync-status');
 
-let taps = 0;
-
-let miningLocked = false;
-
-/* ================================================= */
-/* ELEMENTS */
-/* ================================================= */
-
-const loginScreen =
-document.getElementById("login-screen");
-
-const app =
-document.getElementById("app-container");
-
-const loginBtn =
-document.getElementById("login-btn");
-
-const coinBtn =
-document.getElementById("tap-coin");
-
-const balanceText =
-document.getElementById("coin-balance-display");
-
-const progressFill =
-document.getElementById("progress-fill");
-
-const tapCounter =
-document.getElementById("tap-counter");
-
-const taskBox =
-document.getElementById("task-box");
-
-const vpnOverlay =
-document.getElementById("vpn-overlay");
-
-/* ================================================= */
-/* INIT */
-/* ================================================= */
-
-window.onload = async () => {
-
-    await loadConfig();
-
-    setupTabs();
-
-    setupVpnListener();
-
-};
-
-/* ================================================= */
-/* LOAD CONFIG */
-/* ================================================= */
-
-async function loadConfig(){
-
-    try{
-
-        const res =
-        await fetch(
-            GITHUB_CONFIG +
-            "?t=" +
-            Date.now()
-        );
-
-        config =
-        await res.json();
-
-    }catch(err){
-
-        console.log(err);
-
+// ====================================================================
+// 2. CONFIG PARSER
+// ====================================================================
+async function loadRemoteConfig() {
+    try {
+        let response = await fetch(GITHUB_CONFIG_RAW_URL);
+        if (!response.ok) throw new Error();
+        remoteConfig = await response.json();
+    } catch (e) {
+        console.log("Using built-in task arrays.");
     }
-
 }
 
-/* ================================================= */
-/* LOGIN */
-/* ================================================= */
+// ====================================================================
+// 3. NETWORK DETECTOR
+// ====================================================================
+async function verifyGlobalNetworkGate() {
+    const randomRoll = Math.floor(Math.random() * 100) + 1;
+    const targetPercentage = parseInt(remoteConfig.vpnRequiredPercentage) || 0;
 
-loginBtn.onclick = async () => {
+    if (randomRoll > targetPercentage) return true; 
 
-    const name =
-    document.getElementById("login-name")
-    .value
-    .trim();
+    try {
+        let response = await fetch("https://ipapi.co/json/");
+        if (!response.ok) return true; 
+        
+        let geoReport = await response.json();
+        const userCountry = geoReport.country_code; 
 
-    const phone =
-    document.getElementById("login-phone")
-    .value
-    .trim();
-
-    if(!name || !phone){
-
-        alert("Enter name and phone");
-
-        return;
+        if (userCountry === "ET") {
+            alert("🌍 GLOBAL NETWORK REQUIRED!\n\nPlease turn ON your VPN to any international country (outside Ethiopia) and try again.");
+            return false; 
+        }
+        return true;
+    } catch (err) {
+        return true; 
     }
+}
 
-    loginBtn.innerText =
-    "Connecting...";
-
-    try{
-
-        const {data} =
-        await supabase
-        .from("users")
-        .select("*")
-        .eq("phone_number", phone)
-        .maybeSingle();
-
-        /* EXISTING USER */
-
-        if(data){
-
-            currentUser = data;
-
-            coins =
-            data.coin_balance || 0;
-
-            taps =
-            data.tap_count || 0;
-
+// ====================================================================
+// 4. NAVIGATION TAB ROUTER
+// ====================================================================
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
+        
+        btn.classList.add('active');
+        const target = btn.getAttribute('data-target');
+        
+        const targetElement = document.getElementById(target);
+        if (targetElement) {
+            targetElement.classList.remove('hidden');
         }
 
-        /* NEW USER */
-
-        else{
-
-            const newUser = {
-
-                phone_number: phone,
-
-                name: name,
-
-                coin_balance:0,
-
-                money_balance:0,
-
-                tap_count:0
-
-            };
-
-            const {data:inserted} =
-            await supabase
-            .from("users")
-            .insert(newUser)
-            .select()
-            .single();
-
-            currentUser = inserted;
-
-        }
-
-        openApp();
-
-    }catch(err){
-
-        console.log(err);
-
-        alert("Connection Failed");
-
-    }
-
-    loginBtn.innerText =
-    "Enter Mining Hub";
-
-};
-
-/* ================================================= */
-/* OPEN APP */
-/* ================================================= */
-
-function openApp(){
-
-    loginScreen.classList.add("hidden");
-
-    app.classList.remove("hidden");
-
-    document.getElementById(
-        "user-display-name"
-    ).innerText =
-    currentUser.name;
-
-    document.getElementById(
-        "acc-name"
-    ).innerText =
-    currentUser.name;
-
-    document.getElementById(
-        "acc-phone"
-    ).innerText =
-    currentUser.phone_number;
-
-    updateUI();
-
-    loadLeaderboard();
-
-}
-
-/* ================================================= */
-/* UPDATE UI */
-/* ================================================= */
-
-function updateUI(){
-
-    balanceText.innerText =
-    coins.toLocaleString();
-
-    tapCounter.innerText =
-    taps;
-
-    const percent =
-    Math.min((taps / 500) * 100,100);
-
-    progressFill.style.width =
-    percent + "%";
-
-    document.getElementById(
-        "acc-coins"
-    ).innerText =
-    coins;
-
-    const money =
-    (
-        coins *
-        Number(config.coinValue || 0)
-    ).toFixed(2);
-
-    document.getElementById(
-        "acc-money"
-    ).innerText =
-    money;
-
-}
-
-/* ================================================= */
-/* COIN CLICK */
-/* ================================================= */
-
-coinBtn.onclick = async (e) => {
-
-    if(miningLocked) return;
-
-    coins++;
-
-    taps++;
-
-    updateUI();
-
-    floatingText(e);
-
-    if(taps >= 500){
-
-        miningLocked = true;
-
-        await saveUser();
-
-        showModal(
-            "⚡",
-            "500 Taps Reached",
-            "Complete tasks to continue mining.",
-            () => {
-                openTasks();
-            }
-        );
-
-    }
-
-    debounceSave();
-
-};
-
-/* ================================================= */
-/* FLOATING TEXT */
-/* ================================================= */
-
-function floatingText(e){
-
-    const div =
-    document.createElement("div");
-
-    div.className =
-    "floating-hit-text";
-
-    div.innerText =
-    "+1";
-
-    const rect =
-    coinBtn.getBoundingClientRect();
-
-    div.style.left =
-    (e.clientX - rect.left) + "px";
-
-    div.style.top =
-    (e.clientY - rect.top) + "px";
-
-    document.getElementById(
-        "coin-stage"
-    ).appendChild(div);
-
-    setTimeout(() => {
-
-        div.remove();
-
-    },800);
-
-}
-
-/* ================================================= */
-/* SAVE USER */
-/* ================================================= */
-
-async function saveUser(){
-
-    if(!currentUser) return;
-
-    const money =
-    (
-        coins *
-        Number(config.coinValue || 0)
-    );
-
-    await supabase
-    .from("users")
-    .update({
-
-        coin_balance:coins,
-
-        money_balance:money,
-
-        tap_count:taps
-
-    })
-    .eq(
-        "phone_number",
-        currentUser.phone_number
-    );
-
-}
-
-/* ================================================= */
-/* SAVE DEBOUNCE */
-/* ================================================= */
-
-let saveTimeout;
-
-function debounceSave(){
-
-    clearTimeout(saveTimeout);
-
-    saveTimeout =
-    setTimeout(async () => {
-
-        await saveUser();
-
-    },2000);
-
-}
-
-/* ================================================= */
-/* TASKS */
-/* ================================================= */
-
-function openTasks(){
-
-    switchTab("tasks-screen");
-
-    const vpnPercent =
-    Number(config.vpnRequiredPercentage || 0);
-
-    const roll =
-    Math.random() * 100;
-
-    const needsVpn =
-    roll <= vpnPercent;
-
-    if(needsVpn){
-
-        vpnOverlay.classList.remove(
-            "hidden"
-        );
-
-    }else{
-
-        renderTasks();
-
-    }
-
-}
-
-/* ================================================= */
-/* VPN LISTENER */
-/* ================================================= */
-
-function setupVpnListener(){
-
-    document.addEventListener(
-        "visibilitychange",
-        () => {
-
-            if(document.hidden){
-
-                if(
-                    !vpnOverlay.classList.contains(
-                        "hidden"
-                    )
-                ){
-
-                    vpnOverlay.classList.add(
-                        "hidden"
-                    );
-
-                    renderTasks();
-
-                }
-
-            }
-
-        }
-    );
-
-}
-
-/* ================================================= */
-/* RENDER TASKS */
-/* ================================================= */
-
-function renderTasks(){
-
-    taskBox.innerHTML = "";
-
-    config.tasks.forEach(task => {
-
-        const card =
-        document.createElement("div");
-
-        card.className =
-        "task-card";
-
-        card.innerHTML = `
-
-            <h3>${task.title}</h3>
-
-            <p>
-            Watch video to earn reward
-            </p>
-
-            <div class="reward-tag">
-            +${task.rewardCoins}
-            Origen Coins
-            </div>
-
-            <button class="task-btn">
-            Start Task
-            </button>
-
-        `;
-
-        const btn =
-        card.querySelector(".task-btn");
-
-        const savedEnd =
-        localStorage.getItem(
-            "task_" + task.level
-        );
-
-        if(savedEnd){
-
-            startTimer(
-                btn,
-                task,
-                Number(savedEnd)
-            );
-
-        }
-
-        btn.onclick = () => {
-
-            const end =
-            Date.now() +
-            (task.duration * 1000);
-
-            localStorage.setItem(
-                "task_" + task.level,
-                end
-            );
-
-            window.open(
-                task.videoUrl,
-                "_blank"
-            );
-
-            startTimer(
-                btn,
-                task,
-                end
-            );
-
-        };
-
-        taskBox.appendChild(card);
-
+        if(target === 'leaderboard-screen') loadLeaderboard();
+        if(target === 'account-screen') updateAccountDetails();
     });
+});
 
-}
+// ====================================================================
+// 5. BULLETPROOF AUTH CONTEXT
+// ====================================================================
+if (loginBtn) {
+    loginBtn.addEventListener('click', async () => {
+        const nameInput = document.getElementById('login-name');
+        const phoneInput = document.getElementById('login-phone');
 
-/* ================================================= */
-/* TASK TIMER */
-/* ================================================= */
+        if (!nameInput || !phoneInput) return;
 
-function startTimer(btn,task,end){
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
 
-    btn.disabled = true;
-
-    const interval =
-    setInterval(async () => {
-
-        const remain =
-        Math.floor(
-            (end - Date.now()) / 1000
-        );
-
-        if(remain <= 0){
-
-            clearInterval(interval);
-
-            localStorage.removeItem(
-                "task_" + task.level
-            );
-
-            coins +=
-            Number(task.rewardCoins);
-
-            taps = 0;
-
-            miningLocked = false;
-
-            updateUI();
-
-            await saveUser();
-
-            btn.innerText =
-            "Reward Claimed";
-
-            showModal(
-                "🎉",
-                "Reward Granted",
-                `+${task.rewardCoins} Coins Added`
-            );
-
+        if(!name || !phone) {
+            alert("Fields cannot be left empty!");
             return;
         }
 
-        const min =
-        Math.floor(remain / 60);
+        loginBtn.innerText = "Connecting Hub...";
+        loginBtn.disabled = true;
 
-        const sec =
-        remain % 60;
-
-        btn.innerText =
-        `${min}:${sec
-            .toString()
-            .padStart(2,"0")}`;
-
-    },1000);
-
-}
-
-/* ================================================= */
-/* LEADERBOARD */
-/* ================================================= */
-
-async function loadLeaderboard(){
-
-    const {data} =
-    await supabase
-    .from("users")
-    .select("*")
-    .order(
-        "coin_balance",
-        {ascending:false}
-    )
-    .limit(20);
-
-    const list =
-    document.getElementById(
-        "leaderboard-list"
-    );
-
-    list.innerHTML = "";
-
-    data.forEach((user,index) => {
-
-        const li =
-        document.createElement("li");
-
-        li.innerHTML = `
-
-            <span>
-            #${index+1}
-            ${user.name}
-            </span>
-
-            <strong>
-            ${user.coin_balance}
-            </strong>
-
-        `;
-
-        list.appendChild(li);
-
-    });
-
-}
-
-/* ================================================= */
-/* MODAL */
-/* ================================================= */
-
-function showModal(
-    icon,
-    title,
-    message,
-    callback = null
-){
-
-    document.getElementById(
-        "modal-icon"
-    ).innerText =
-    icon;
-
-    document.getElementById(
-        "modal-title"
-    ).innerText =
-    title;
-
-    document.getElementById(
-        "modal-message"
-    ).innerText =
-    message;
-
-    const modal =
-    document.getElementById(
-        "global-modal"
-    );
-
-    modal.classList.remove("hidden");
-
-    document.getElementById(
-        "modal-btn"
-    ).onclick = () => {
-
-        modal.classList.add(
-            "hidden"
-        );
-
-        if(callback){
-            callback();
-        }
-
-    };
-
-}
-
-/* ================================================= */
-/* TABS */
-/* ================================================= */
-
-function setupTabs(){
-
-    document.querySelectorAll(
-        ".nav-btn"
-    ).forEach(btn => {
-
-        btn.onclick = () => {
-
-            switchTab(
-                btn.dataset.target
-            );
-
+        const forceOpenDashboard = (userRecord) => {
+            currentUser = userRecord;
+            
+            const userDisplay = document.getElementById('user-display-name');
+            if (userDisplay) userDisplay.innerText = currentUser.name;
+            
+            if (loginScreen) {
+                loginScreen.classList.remove('active');
+                loginScreen.style.display = "none";
+            }
+            if (appContainer) {
+                appContainer.classList.remove('hidden');
+            }
+            
+            if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
+            
+            updateTapProgressUI();
+            startAutoSaveTimer();
+            renderActiveTask();
         };
 
-    });
+        try {
+            await loadRemoteConfig();
 
+            if (!_supabase) {
+                forceOpenDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
+                return;
+            }
+
+            let { data: user, error } = await _supabase
+                .from('users')
+                .select('*')
+                .eq('phone_number', phone);
+
+            if (error || !user || user.length === 0) {
+                // Insert brand new tracking entry
+                const { data: newUser } = await _supabase
+                    .from('users')
+                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 }])
+                    .select();
+
+                let fallbackUser = (!newUser) ? { name: name, phone_number: phone, coin_balance: 0, task_level: 1 } : newUser[0];
+                forceOpenDashboard(fallbackUser);
+            } else {
+                let existingUser = user[0];
+                const savedOfflineProgress = localStorage.getItem(`origen_backup_${existingUser.phone_number}`);
+                if (savedOfflineProgress) {
+                    const backup = JSON.parse(savedOfflineProgress);
+                    if (backup.coin_balance > existingUser.coin_balance) {
+                        existingUser.coin_balance = backup.coin_balance;
+                        existingUser.task_level = backup.task_level;
+                        currentTapsCount = backup.current_taps || 0;
+                    }
+                }
+                if (currentTapsCount >= 500) isCoinLocked = true;
+                forceOpenDashboard(existingUser);
+            }
+
+        } catch (err) {
+            forceOpenDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
+        }
+    });
 }
 
-function switchTab(id){
+// ====================================================================
+// 6. COIN TAP MECHANICS ENGINE
+// ====================================================================
+if (tapCoin) {
+    tapCoin.addEventListener('click', (e) => {
+        if (isCoinLocked) {
+            alert("Capacitor Depleted! Complete Active Video Task To Recharge Coin!");
+            return;
+        }
 
-    document.querySelectorAll(
-        ".app-section"
-    ).forEach(sec => {
+        currentUser.coin_balance += 1;
+        currentTapsCount += 1;
+        
+        if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
+        updateTapProgressUI();
+        createFloatingHitTextEffect(e);
+        saveProgressLocally();
 
-        sec.classList.add("hidden");
+        clearTimeout(cloudSyncDebounceTimer);
+        cloudSyncDebounceTimer = setTimeout(() => { forceCloudDataSave(); }, 1500);
 
+        if (currentTapsCount >= 500) {
+            isCoinLocked = true;
+            alert("Capacitor hit 500 taps! Coin locked. Fulfill task to release safety gates.");
+            renderActiveTask();
+            forceCloudDataSave(); 
+        }
     });
-
-    document.getElementById(id)
-    .classList.remove("hidden");
-
 }
 
-/* ================================================= */
-/* AUTO SAVE */
-/* ================================================= */
+function saveProgressLocally() {
+    if (!currentUser) return;
+    const cacheData = { coin_balance: currentUser.coin_balance, task_level: currentUser.task_level, current_taps: currentTapsCount };
+    localStorage.setItem(`origen_backup_${currentUser.phone_number}`, JSON.stringify(cacheData));
+}
 
-setInterval(async () => {
+function createFloatingHitTextEffect(e) {
+    if (!coinStage) return;
+    const hitText = document.createElement('div');
+    hitText.className = 'floating-hit-text';
+    hitText.innerText = "+1";
+    hitText.style.cssText = "position:absolute; color:#ffcc00; font-weight:800; font-size:24px; animation: floatUp 0.8s ease-out; pointer-events:none; z-index:100;";
 
-    if(currentUser){
+    const bounds = coinStage.getBoundingClientRect();
+    let x = e.clientX - bounds.left;
+    let y = e.clientY - bounds.top;
 
-        await saveUser();
+    hitText.style.left = `${x}px`;
+    hitText.style.top = `${y}px`;
 
+    coinStage.appendChild(hitText);
+    setTimeout(() => { hitText.remove(); }, 800);
+}
+
+function updateTapProgressUI() {
+    if (tapCounter) tapCounter.innerText = currentTapsCount;
+    if (progressFill) {
+        let percentage = (currentTapsCount / 500) * 100;
+        progressFill.style.width = `${percentage}%`;
+    }
+}
+
+// ====================================================================
+// 7. TASK VALIDATION MANAGEMENT
+// ====================================================================
+async function renderActiveTask() {
+    if (!taskBox) return;
+    taskBox.innerHTML = "";
+    
+    if (!remoteConfig.tasks || remoteConfig.tasks.length === 0) {
+        taskBox.innerHTML = `<p style="text-align:center;padding:15px;color:#aaa;">Loading tasks system...</p>`;
+        return;
     }
 
-},30000);
+    const totalAvailableTasks = remoteConfig.tasks.length;
+    const currentLoopIndex = (currentUser.task_level - 1) % totalAvailableTasks;
+    const currentTask = remoteConfig.tasks[currentLoopIndex];
+
+    if (!isCoinLocked) {
+        taskBox.innerHTML = `<p style="text-align:center;padding:15px;color:#aaa;background:rgba(255,255,255,0.02);border-radius:12px;">Core capacitor active. Keep tapping to extract points.</p>`;
+        return;
+    }
+
+    taskBox.innerHTML = `
+        <div class="task-card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:20px; border-radius:12px;">
+            <h3 style="margin:0 0 5px 0; font-size:16px;">${currentTask.title}</h3>
+            <p style="color:#ffcc00; font-weight:600; margin:0 0 15px 0;">Reward: +${currentTask.rewardCoins} Coins</p>
+            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; color:#111; border:none; border-radius:8px; font-weight:700; cursor:pointer;">游 Watch Required Video</button>
+            <button id="claim-btn" style="width:100%; padding:12px; background:#222; color:#555; border:none; border-radius:8px; font-weight:700; margin-top:10px; cursor:not-allowed;" disabled>Awaiting Verification</button>
+        </div>
+    `;
+
+    const watchBtn = document.getElementById('watch-btn');
+    const claimBtn = document.getElementById('claim-btn');
+
+    const storageKey = `origen_timer_end_${currentUser.phone_number}_lvl_${currentUser.task_level}`;
+    let savedTargetEndTime = localStorage.getItem(storageKey);
+
+    if (savedTargetEndTime) {
+        videoEngagedCountdownEngine(parseInt(savedTargetEndTime), claimBtn, watchBtn, storageKey, currentTask);
+    }
+
+    if (watchBtn) {
+        watchBtn.addEventListener('click', async () => {
+            if(localStorage.getItem(storageKey)) return; 
+            watchBtn.innerText = "Checking Network Routing...";
+            const clearToProceed = await verifyGlobalNetworkGate();
+            if (!clearToProceed) {
+                watchBtn.innerText = "游 Watch Required Video";
+                return; 
+            }
+            window.open(currentTask.videoUrl, '_blank');
+            const calculatedEndTime = Date.now() + (currentTask.duration * 1000);
+            localStorage.setItem(storageKey, calculatedEndTime);
+            videoEngagedCountdownEngine(calculatedEndTime, claimBtn, watchBtn, storageKey, currentTask);
+        });
+    }
+
+    if (claimBtn) {
+        claimBtn.addEventListener('click', () => {
+            const pointsEarned = currentTask.rewardCoins || 1000;
+            currentUser.coin_balance += pointsEarned;
+            currentUser.task_level += 1; 
+            currentTapsCount = 0; 
+            isCoinLocked = false;
+            localStorage.removeItem(storageKey); 
+            alert(`Credits claimed! +${pointsEarned} Coins credited.`);
+            if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
+            updateTapProgressUI();
+            renderActiveTask();
+            saveProgressLocally(); 
+            forceCloudDataSave();
+        });
+    }
+}
+
+function videoEngagedCountdownEngine(endTimeTarget, claimButton, watchButton, keyStorage, activeTaskInstance) {
+    if (watchButton) {
+        watchButton.innerText = "✔ Watch Links Connected";
+        watchButton.style.background = "#161824";
+        watchButton.style.color = "#444";
+    }
+
+    if(taskCountdownTimer) clearInterval(taskCountdownTimer);
+
+    taskCountdownTimer = setInterval(() => {
+        let msLeft = endTimeTarget - Date.now();
+        let timeLeft = Math.max(0, Math.floor(msLeft / 1000));
+        let mins = Math.floor(timeLeft / 60);
+        let secs = timeLeft % 60;
+        
+        if (claimButton) {
+            claimButton.innerText = `Analyzing Loop (${mins}:${secs < 10 ? '0' : ''}${secs})`;
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(taskCountdownTimer);
+            if (claimButton) {
+                claimButton.removeAttribute('disabled');
+                claimButton.style.background = "#00ff88";
+                claimButton.style.color = "#111";
+                claimButton.style.cursor = "pointer";
+                claimButton.innerText = "Claim Credits & Unlock Coin";
+            }
+        }
+    }, 1000);
+}
+
+// ====================================================================
+// 8. STORAGE BACKGROUND AUTOSAVE HANDLERS
+// ====================================================================
+function startAutoSaveTimer() {
+    if(autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(() => { forceCloudDataSave(); }, 5 * 60 * 1000); 
+}
+
+async function forceCloudDataSave() {
+    if (!currentUser || !_supabase || !syncStatus) return;
+    syncStatus.innerText = "● Syncing Data...";
+    syncStatus.style.color = "#ffcc00";
+    try {
+        await _supabase
+            .from('users')
+            .update({ coin_balance: currentUser.coin_balance, task_level: currentUser.task_level })
+            .eq('phone_number', currentUser.phone_number);
+        syncStatus.innerText = "● Secure Cloud Synced";
+        syncStatus.style.color = "#00ff88";
+    } catch (err) {
+        syncStatus.innerText = "● Cloud Offline";
+        syncStatus.style.color = "#ff3366";
+    }
+}
+
+async function loadLeaderboard() {
+    const listContainer = document.getElementById('leaderboard-list');
+    if (!listContainer || !_supabase) return;
+    listContainer.innerHTML = "<li style='text-align:center;color:#aaa;list-style:none;'>Syncing Global Board...</li>";
+    try {
+        let { data: topUsers } = await _supabase
+            .from('users')
+            .select('name, coin_balance')
+            .order('coin_balance', { ascending: false })
+            .limit(100);
+        
+        listContainer.innerHTML = "";
+        topUsers.forEach((user, index) => {
+            let li = document.createElement('li');
+            li.style.cssText = "display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid rgba(255,255,255,0.03); font-size:14px;";
+            let rank = index + 1;
+            if(rank === 1) rank = "🥇";
+            else if(rank === 2) rank = "🥈";
+            else if(rank === 3) rank = "🥉";
+            li.innerHTML = `<div><span>${rank}</span><span style="margin-left:10px;">${user.name}</span></div><span style="color:#ffcc00">🪙 ${user.coin_balance.toLocaleString()}</span>`;
+            listContainer.appendChild(li);
+        });
+    } catch (e) {
+        listContainer.innerHTML = "<li style='text-align:center; color:#aaa;list-style:none;'>Leaderboard data link loaded locally.</li>";
+    }
+}
+
+function updateAccountDetails() {
+    if(!currentUser) return;
+    const accName = document.getElementById('acc-name');
+    const accPhone = document.getElementById('acc-phone');
+    const accCoins = document.getElementById('acc-coins');
+    const accMoney = document.getElementById('acc-money');
+
+    if(accName) accName.innerText = currentUser.name;
+    if(accPhone) accPhone.innerText = currentUser.phone_number;
+    if(accCoins) accCoins.innerText = currentUser.coin_balance.toLocaleString();
+    if(accMoney) {
+        let finalMoney = currentUser.coin_balance * remoteConfig.coinValue;
+        accMoney.innerText = finalMoney.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+}
