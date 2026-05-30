@@ -1,0 +1,399 @@
+/* GENERAL APP WRAPPER CONFIG */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    user-select: none;
+}
+
+body {
+    background: #090a10;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* UNIVERSAL STRUCTURAL UTILITY HIDDEN GATE */
+.hidden {
+    display: none !important;
+}
+
+/* PREMIUM INTERACTIVE LOGIN PANEL UI */
+.screen {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+}
+
+.auth-card {
+    background: linear-gradient(145deg, #121420, #1a1d2e);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 35px 25px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+}
+
+.auth-logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.cyber-coin-logo {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #ffcc00, #ff9900);
+    color: #fff;
+    font-size: 36px;
+    font-weight: 800;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 153, 0, 0.4);
+}
+
+.auth-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.auth-card p {
+    font-size: 13px;
+    color: #8a8f9d;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.input-group {
+    margin-bottom: 18px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 20px;
+    background: #0d0f17;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.input-group input:focus {
+    border-color: #ffcc00;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.1);
+}
+
+#login-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(90deg, #ffcc00, #ff9900);
+    border: none;
+    border-radius: 14px;
+    color: #000;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#login-btn:active {
+    transform: scale(0.98);
+}
+
+/* PREMIUM WORKSPACE CONTAINER LAYOUT */
+#app-container {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    background: #090a10;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #0e101a;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.user-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ffcc00;
+}
+
+#user-display-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#sync-status {
+    font-size: 12px;
+    color: #00ff88;
+    font-weight: 600;
+}
+
+.screen-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    padding-bottom: 100px;
+}
+
+/* MINING SYSTEM VIEW (TAP HUB) */
+.balance-wrapper {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.balance-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #8a8f9d;
+    font-weight: 600;
+}
+
+.main-balance {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+#coin-balance-display {
+    font-size: 38px;
+    font-weight: 800;
+}
+
+.coin-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 40px 0;
+    position: relative;
+}
+
+#tap-coin {
+    width: 210px;
+    height: 210px;
+    background: radial-gradient(circle, #ffe680 0%, #ffcc00 50%, #b38600 100%);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 35px rgba(255, 204, 0, 0.35), inset 0 0 15px rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: transform 0.05s ease-in-out;
+}
+
+#tap-coin:active {
+    transform: scale(0.95);
+}
+
+.coin-engraving {
+    font-size: 100px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+/* ENERGY METER MODULE */
+.energy-box {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 16px;
+}
+
+.energy-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #8a8f9d;
+    margin-bottom: 8px;
+}
+
+.energy-text strong {
+    color: #fff;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: #161824;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ffcc00, #ffaa00);
+    border-radius: 10px;
+    transition: width 0.1s ease;
+}
+
+/* SECTIONS COMMON CONFIG */
+.section-title h2 {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.section-title p {
+    font-size: 13px;
+    color: #8a8f9d;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* FINANCIAL CARD PREMIUM UI */
+.telebirr-card {
+    background: linear-gradient(135deg, #1a52ff 0%, #002db3 100%);
+    padding: 22px;
+    border-radius: 20px;
+    margin-top: 20px;
+    box-shadow: 0 10px 25px rgba(0, 45, 179, 0.3);
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-brand {
+    font-weight: 800;
+    font-size: 18px;
+    font-style: italic;
+    color: #fff;
+}
+
+.chip {
+    width: 38px;
+    height: 28px;
+    background: linear-gradient(135deg, #ffea9f, #d4af37);
+    border-radius: 6px;
+}
+
+.card-holder {
+    margin: 25px 0 15px 0;
+}
+
+.label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+}
+
+.card-holder h3, .card-bottom h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.stat-tile {
+    background: #121420;
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 16px;
+    border-radius: 16px;
+}
+
+.stat-tile span {
+    font-size: 12px;
+    color: #8a8f9d;
+}
+
+.stat-tile h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.stat-tile.premium h2 {
+    color: #00ff88;
+}
+
+.stat-tile h2 small {
+    font-size: 12px;
+    color: #8a8f9d;
+}
+
+/* CORE BOTTOM NAVIGATION CONTROLLER BAR */
+.bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 72px;
+    background: #0e101a;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 0 10px;
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: #5c6273;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.nav-svg {
+    width: 22px;
+    height: 22px;
+}
+
+.nav-text {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.nav-btn.active {
+    color: #ffcc00;
+}
+
+/* FLOATING POPUP TEXT ANIMATION */
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-70px) scale(0.8); opacity: 0; }
+}
