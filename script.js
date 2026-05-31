@@ -66,7 +66,6 @@ async function executeVpnGateCheck() {
     const randomRoll = Math.floor(Math.random() * 100) + 1;
     const requiredPct = remoteConfig.vpnRequiredPercentage !== undefined ? remoteConfig.vpnRequiredPercentage : 100;
     
-    // If user beats the percentage chance, bypass check entirely
     if (randomRoll > requiredPct) {
         if (vpnOverlay) vpnOverlay.classList.add("hidden");
         switchSectionToTasks();
@@ -74,7 +73,6 @@ async function executeVpnGateCheck() {
     }
 
     if (vpnOverlay) {
-        // Render updated premium card inside your native overlay container
         vpnOverlay.innerHTML = `
             <div class="vpn-card">
                 <div class="vpn-icon" style="font-size: 40px; margin-bottom: 12px;">🌍</div>
@@ -97,7 +95,6 @@ async function executeVpnGateCheck() {
             try {
                 let response = await fetch("https://ipapi.co/json/");
                 
-                // Track if ad-blocker or proxy dropped the fetch stream entirely
                 if (!response.ok) {
                     showModal("⚠️", "Network Intercepted", "Connection verification blocked. Please temporarily disable your ad blocker or check your network connection and try again.", "Try Again");
                     checkBtn.innerText = "Check Connection";
@@ -116,7 +113,6 @@ async function executeVpnGateCheck() {
                     switchSectionToTasks();
                 }
             } catch (err) {
-                // Catch statement handles ad-block script blocks cleanly
                 showModal("⚠️", "Security Exception", "Network verification error. Please ensure your VPN is active and any ad blockers are disabled.", "Try Again");
                 checkBtn.innerText = "Check Connection";
                 checkBtn.disabled = false;
@@ -142,7 +138,6 @@ function switchSectionToTasks() {
 // ====================================================================
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        // Enforce lock navigation if limits are tripped
         if (isCoinLocked && btn.getAttribute('data-target') !== 'tasks-screen') {
             executeVpnGateCheck();
             return;
@@ -260,6 +255,9 @@ if (tapCoin) {
     });
 }
 
+// ====================================================================
+// 6. ADVERTISING TASK VERIFIER
+// ====================================================================
 function saveProgressLocally() {
     if (!currentUser) return;
     localStorage.setItem(`origen_backup_${currentUser.phone_number}`, JSON.stringify({
@@ -290,9 +288,6 @@ function updateTapProgressUI() {
     if (progressFill) progressFill.style.width = `${(currentTapsCount / 500) * 100}%`;
 }
 
-// ====================================================================
-// 6. ADVERTISING TASK VERIFIER
-// ====================================================================
 async function renderActiveTask() {
     if (!taskBox) return;
     taskBox.innerHTML = "";
@@ -319,7 +314,9 @@ async function renderActiveTask() {
     const storageKey = `origen_timer_end_${currentUser.phone_number}_lvl_${currentUser.task_level}`;
     let savedEndTime = localStorage.getItem(storageKey);
 
-    if (savedEndTime) runTaskTimer(parseInt(savedEndTime), claimBtn, watchBtn, storageKey, currentTask);
+    if (savedEndTime) {
+        runTaskTimer(parseInt(savedEndTime), claimBtn, watchBtn, storageKey, currentTask);
+    }
 
     watchBtn.addEventListener('click', () => {
         if(localStorage.getItem(storageKey)) return;
@@ -344,15 +341,26 @@ async function renderActiveTask() {
 }
 
 function runTaskTimer(targetTime, claim, watch, key, task) {
-    if (watch) { watch.innerText = "✔ Loop Processing"; watch.style.background = "#0d0f18"; watch.style.color = "#4e5361"; watch.style.cursor = "default"; }
+    if (watch) { 
+        watch.innerText = "✔ Loop Processing"; 
+        watch.style.background = "#0d0f18"; 
+        watch.style.color = "#4e5361"; 
+        watch.style.cursor = "default"; 
+    }
     if (taskCountdownTimer) clearInterval(taskCountdownTimer);
     
     taskCountdownTimer = setInterval(() => {
         let diff = targetTime - Date.now();
         if (diff <= 0) {
             clearInterval(taskCountdownTimer);
-            // Auto-trigger complete interface setup once countdown terminates
-            renderActiveTask();
+            if (claim) {
+                claim.innerText = "Claim Task Reward";
+                claim.disabled = false;
+                claim.style.background = "linear-gradient(90deg, #ffcc00, #ff7b00)";
+                claim.style.color = "#111";
+                claim.style.cursor = "pointer";
+                claim.style.boxShadow = "0 0 15px rgba(255, 204, 0, 0.4)";
+            }
         } else {
             let secs = Math.ceil(diff / 1000);
             if (claim) claim.innerText = `Analyzing Sync (${secs}s)`;
@@ -373,7 +381,10 @@ async function forceCloudDataSave() {
         await supabaseClient.from('users').update({ coin_balance: currentUser.coin_balance, task_level: currentUser.task_level }).eq('phone_number', currentUser.phone_number);
         syncStatus.innerText = "● Secure Cloud Synced";
         syncStatus.style.color = "#00ff88";
-    } catch (e) { syncStatus.innerText = "● Cloud Offline"; syncStatus.style.color = "#ff3366"; }
+    } catch (e) { 
+        syncStatus.innerText = "● Cloud Offline"; 
+        syncStatus.style.color = "#ff3366"; 
+    }
 }
 
 async function loadLeaderboard() {
@@ -389,7 +400,9 @@ async function loadLeaderboard() {
             li.innerHTML = `<span>${idx + 1}. ${u.name}</span><span style="color:#ffcc00">🪙 ${u.coin_balance.toLocaleString()}</span>`;
             list.appendChild(li);
         });
-    } catch(e) { list.innerHTML = "<li style='text-align:center;color:#8e8e9a;list-style:none;font-size:13px;'>Failed to trace database metrics.</li>"; }
+    } catch(e) { 
+        list.innerHTML = "<li style='text-align:center;color:#8e8e9a;list-style:none;font-size:13px;'>Failed to trace database metrics.</li>"; 
+    }
 }
 
 function updateAccountDetails() {
@@ -402,7 +415,10 @@ function updateAccountDetails() {
 
 function showModal(icon, title, message, btnText) {
     if (!globalModal) { alert(message); return; }
-    modalIcon.innerText = icon; modalTitle.innerText = title; modalMessage.innerText = message; modalButton.innerText = btnText;
+    modalIcon.innerText = icon; 
+    modalTitle.innerText = title; 
+    modalMessage.innerText = message; 
+    modalButton.innerText = btnText;
     globalModal.classList.remove("hidden");
     modalButton.onclick = () => globalModal.classList.add("hidden");
 }
