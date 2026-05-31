@@ -33,7 +33,7 @@ body {
 
 .auth-card {
     background: linear-gradient(145deg, #111322, #16192b);
-    border: 1px solid rgba(255, 204, 0, 0.15); /* Sleek accent border tint */
+    border: 1px solid rgba(255, 204, 0, 0.15);
     padding: 40px 25px;
     border-radius: 28px;
     text-align: center;
@@ -47,7 +47,6 @@ body {
     margin-bottom: 25px;
 }
 
-/* Premium Floating & Custom Neon Glow Frame Elements */
 .cyber-coin-logo {
     width: 76px;
     height: 76px;
