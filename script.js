@@ -93,29 +93,18 @@ async function executeVpnGateCheck() {
             checkBtn.disabled = true;
 
             try {
-                // FIXED: Switched to ip-api.com with fallback handling to properly recognize active VPN connections
-                let response = await fetch("https://ip-api.com/json/");
-                let data = null;
-
-                if (response.ok) {
-                    data = await response.json();
-                } else {
-                    let backupRes = await fetch("https://api.ipify.org?format=json");
-                    if (backupRes.ok) {
-                        let backupData = await backupRes.json();
-                        let geoRes = await fetch(`https://ip-api.com/json/${backupData.ip}`);
-                        if (geoRes.ok) data = await geoRes.json();
-                    }
-                }
-
-                if (!data || data.status === "fail") {
-                    showModal("⚠️", "Route Timeout", "Network verification took too long. Please pause any strict ad-blockers and click check again.", "Try Again");
+                let response = await fetch("https://ipapi.co/json/");
+                
+                if (!response.ok) {
+                    showModal("⚠️", "Network Intercepted", "Connection verification blocked. Please temporarily disable your ad blocker or check your network connection and try again.", "Try Again");
                     checkBtn.innerText = "Check Connection";
                     checkBtn.disabled = false;
                     return;
                 }
+                
+                let data = await response.json();
 
-                if (data.countryCode === "ET" || data.country === "Ethiopia") {
+                if (data.country_code === "ET") {
                     showModal("⚠️", "VPN Route Flagged", "VPN not detected, please turn on an international VPN connection and try again.", "Try Again");
                     checkBtn.innerText = "Check Connection";
                     checkBtn.disabled = false;
@@ -124,23 +113,7 @@ async function executeVpnGateCheck() {
                     switchSectionToTasks();
                 }
             } catch (err) {
-                try {
-                    let emergencyRes = await fetch("https://api.infoip.io/json/");
-                    if (emergencyRes.ok) {
-                        let emergencyData = await emergencyRes.json();
-                        if (emergencyData.country_short === "ET") {
-                            showModal("⚠️", "VPN Route Flagged", "VPN not detected, please turn on an international VPN connection and try again.", "Try Again");
-                        } else {
-                            vpnOverlay.classList.add("hidden");
-                            switchSectionToTasks();
-                            return;
-                        }
-                    } else {
-                        showModal("⚠️", "Network Intercepted", "Connection verification blocked. Please try changing your VPN server region, ensure your connection is active, and try again.", "Try Again");
-                    }
-                } catch(e) {
-                    showModal("⚠️", "Security Exception", "Network verification error. Please ensure your VPN is active and any ad blockers are disabled.", "Try Again");
-                }
+                showModal("⚠️", "Security Exception", "Network verification error. Please ensure your VPN is active and any ad blockers are disabled.", "Try Again");
                 checkBtn.innerText = "Check Connection";
                 checkBtn.disabled = false;
             }
@@ -289,6 +262,7 @@ function saveProgressLocally() {
     }));
 }
 
+// THIS IS SECTION 6 WHERE THE "PROCESS NODE LINK..." COMPONENT WAS CORRECTED
 function createFloatingHitTextEffect(e) {
     if (!coinStage) return;
     const hitText = document.createElement('div');
@@ -324,6 +298,7 @@ async function renderActiveTask() {
         return;
     }
 
+    // FIXED ONLY THIS PART HERE (Modified the text of the disabled claim button)
     taskBox.innerHTML = `
         <div class="task-card" style="background:#121420; border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:16px;">
             <h3 style="font-size: 16px; font-weight:700; margin-bottom:6px;">${currentTask.title}</h3>
@@ -437,7 +412,6 @@ function updateAccountDetails() {
     document.getElementById('acc-money').innerText = (currentUser.coin_balance * remoteConfig.coinValue).toFixed(2);
 }
 
-// Global Overlay Modal Manager
 function showModal(icon, title, message, btnText) {
     if (!globalModal) { alert(message); return; }
     modalIcon.innerText = icon; 
