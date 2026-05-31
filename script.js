@@ -93,18 +93,29 @@ async function executeVpnGateCheck() {
             checkBtn.disabled = true;
 
             try {
-                let response = await fetch("https://ipapi.co/json/");
-                
-                if (!response.ok) {
-                    showModal("⚠️", "Network Intercepted", "Connection verification blocked. Please temporarily disable your ad blocker or check your network connection and try again.", "Try Again");
+                // FIXED: Switched to ip-api.com with fallback handling to properly recognize active VPN connections
+                let response = await fetch("https://ip-api.com/json/");
+                let data = null;
+
+                if (response.ok) {
+                    data = await response.json();
+                } else {
+                    let backupRes = await fetch("https://api.ipify.org?format=json");
+                    if (backupRes.ok) {
+                        let backupData = await backupRes.json();
+                        let geoRes = await fetch(`https://ip-api.com/json/${backupData.ip}`);
+                        if (geoRes.ok) data = await geoRes.json();
+                    }
+                }
+
+                if (!data || data.status === "fail") {
+                    showModal("⚠️", "Route Timeout", "Network verification took too long. Please pause any strict ad-blockers and click check again.", "Try Again");
                     checkBtn.innerText = "Check Connection";
                     checkBtn.disabled = false;
                     return;
                 }
-                
-                let data = await response.json();
 
-                if (data.country_code === "ET") {
+                if (data.countryCode === "ET" || data.country === "Ethiopia") {
                     showModal("⚠️", "VPN Route Flagged", "VPN not detected, please turn on an international VPN connection and try again.", "Try Again");
                     checkBtn.innerText = "Check Connection";
                     checkBtn.disabled = false;
@@ -113,7 +124,23 @@ async function executeVpnGateCheck() {
                     switchSectionToTasks();
                 }
             } catch (err) {
-                showModal("⚠️", "Security Exception", "Network verification error. Please ensure your VPN is active and any ad blockers are disabled.", "Try Again");
+                try {
+                    let emergencyRes = await fetch("https://api.infoip.io/json/");
+                    if (emergencyRes.ok) {
+                        let emergencyData = await emergencyRes.json();
+                        if (emergencyData.country_short === "ET") {
+                            showModal("⚠️", "VPN Route Flagged", "VPN not detected, please turn on an international VPN connection and try again.", "Try Again");
+                        } else {
+                            vpnOverlay.classList.add("hidden");
+                            switchSectionToTasks();
+                            return;
+                        }
+                    } else {
+                        showModal("⚠️", "Network Intercepted", "Connection verification blocked. Please try changing your VPN server region, ensure your connection is active, and try again.", "Try Again");
+                    }
+                } catch(e) {
+                    showModal("⚠️", "Security Exception", "Network verification error. Please ensure your VPN is active and any ad blockers are disabled.", "Try Again");
+                }
                 checkBtn.innerText = "Check Connection";
                 checkBtn.disabled = false;
             }
@@ -196,10 +223,7 @@ if (loginBtn) {
                 return;
             }
 
-            let { data: user, error } = await supabaseClient
-                .from('users')
-                .select('*')
-                .eq('phone_number', phone);
+            let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
             if (error || !user || user.length === 0) {
                 const { data: newUser } = await supabaseClient
@@ -392,7 +416,7 @@ async function loadLeaderboard() {
     if (!list || !supabaseClient) return;
     list.innerHTML = "<li style='text-align:center;color:#8e8e9a;list-style:none;font-size:13px;'>Querying global rankings...</li>";
     try {
-        let { data } = await supabaseClient.from('users').select('name, coin_balance').order('coin_balance', { ascending: false }).limit(50);
+        let { data } = await supabaseClient.from('users').select('*').order('coin_balance', { ascending: false }).limit(50);
         list.innerHTML = "";
         data.forEach((u, idx) => {
             let li = document.createElement('li');
@@ -413,6 +437,7 @@ function updateAccountDetails() {
     document.getElementById('acc-money').innerText = (currentUser.coin_balance * remoteConfig.coinValue).toFixed(2);
 }
 
+// Global Overlay Modal Manager
 function showModal(icon, title, message, btnText) {
     if (!globalModal) { alert(message); return; }
     modalIcon.innerText = icon; 
