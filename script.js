@@ -2,7 +2,16 @@
 // 1. DATABASE CONNECTION & CONFIG
 // ====================================================================
 const SUPABASE_URL = "https://puaggevlswqumummsokw.supabase.co"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcNsfdmzpqzfvCh7inPYYW1tlo8IVmXlNzJFGQ";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcN[...]
+
+// TELEGRAM WebApp Support
+let tg = null;
+let isInTelegram = false;
+if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
+    tg = window.Telegram.WebApp;
+    isInTelegram = true;
+    tg.ready();
+}
 
 let supabaseClient = null;
 try {
@@ -63,6 +72,12 @@ async function loadRemoteConfig() {
 }
 
 async function executeVpnGateCheck() {
+    // SKIP VPN check if running in Telegram
+    if (isInTelegram) {
+        switchSectionToTasks();
+        return;
+    }
+
     const randomRoll = Math.floor(Math.random() * 100) + 1;
     const requiredPct = remoteConfig.vpnRequiredPercentage !== undefined ? remoteConfig.vpnRequiredPercentage : 100;
     
@@ -80,7 +95,7 @@ async function executeVpnGateCheck() {
                 <p style="color: #8e8e9a; font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
                     Please route your connection outside of Ethiopia to unlock the mining verification parameters.
                 </p>
-                <button id="vpn-check-btn" style="width: 100%; padding: 14px; background: linear-gradient(90deg, #ffcc00, #ff7b00); border: none; border-radius: 12px; color: #111; font-weight: 800; cursor: pointer; font-size: 14px;">
+                <button id="vpn-check-btn" style="width: 100%; padding: 14px; background: linear-gradient(90deg, #ffcc00, #ff7b00); border: none; border-radius: 12px; color: #111; font-weight: 800; cursor: pointer;">
                     Check Connection
                 </button>
             </div>
@@ -219,8 +234,12 @@ if (loginBtn) {
                 loadDashboard(existing);
             }
         } catch (err) {
+            console.error("Login error:", err);
             loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
         }
+        
+        loginBtn.innerText = "Enter Mining Hub";
+        loginBtn.disabled = false;
     });
 }
 
@@ -262,7 +281,6 @@ function saveProgressLocally() {
     }));
 }
 
-// THIS IS SECTION 6 WHERE THE "PROCESS NODE LINK..." COMPONENT WAS CORRECTED
 function createFloatingHitTextEffect(e) {
     if (!coinStage) return;
     const hitText = document.createElement('div');
@@ -298,13 +316,12 @@ async function renderActiveTask() {
         return;
     }
 
-    // FIXED ONLY THIS PART HERE (Modified the text of the disabled claim button)
     taskBox.innerHTML = `
         <div class="task-card" style="background:#121420; border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:16px;">
             <h3 style="font-size: 16px; font-weight:700; margin-bottom:6px;">${currentTask.title}</h3>
             <p style="color:#ffcc00; font-weight:700; margin:4px 0 16px 0;">+${currentTask.rewardCoins} Coins</p>
-            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; border:none; color:#111; font-weight:700; border-radius:10px; cursor:pointer; font-size:14px;">Launch Video Task</button>
-            <button id="claim-btn" style="width:100%; padding:12px; background:#191c2c; border:none; color:#4e5361; font-weight:700; border-radius:10px; margin-top:10px; font-size:14px;" disabled>Processing Node Link...</button>
+            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; border:none; color:#111; font-weight:700; border-radius:10px; cursor:pointer; font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Launch Video Task</button>
+            <button id="claim-btn" style="width:100%; padding:12px; background:#191c2c; border:none; color:#4e5361; font-weight:700; border-radius:10px; margin-top:10px; font-size:14px;" disabled>Process Node Link</button>
         </div>
     `;
 
