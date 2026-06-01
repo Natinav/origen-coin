@@ -2,15 +2,19 @@
 // 1. DATABASE CONNECTION & CONFIG
 // ====================================================================
 const SUPABASE_URL = "https://puaggevlswqumummsokw.supabase.co"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcN[...]
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoT[...]
 
 // TELEGRAM WebApp Support
 let tg = null;
 let isInTelegram = false;
+let telegramUser = null;
+
 if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
     tg = window.Telegram.WebApp;
     isInTelegram = true;
     tg.ready();
+    telegramUser = tg.initDataUnsafe?.user || null;
+    console.log("Telegram WebApp initialized:", telegramUser);
 }
 
 let supabaseClient = null;
@@ -201,45 +205,68 @@ if (loginBtn) {
             updateTapProgressUI();
             startAutoSaveTimer();
             renderActiveTask();
+            
+            // Reset button after successful login
+            loginBtn.innerText = "Enter Mining Hub";
+            loginBtn.disabled = false;
         };
 
         try {
             await loadRemoteConfig();
 
             if (!supabaseClient) {
+                console.warn("Supabase not available - using local storage mode");
                 loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
                 return;
             }
 
             let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
-            if (error || !user || user.length === 0) {
-                const { data: newUser } = await supabaseClient
+            if (error) {
+                console.error("Database error:", error);
+                // Fallback to local mode if database fails
+                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
+                return;
+            }
+
+            if (!user || user.length === 0) {
+                // New user - create account
+                const { data: newUser, error: insertError } = await supabaseClient
                     .from('users')
                     .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 }])
                     .select();
-                loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
-            } else {
-                let existing = user[0];
-                const localBackup = localStorage.getItem(`origen_backup_${existing.phone_number}`);
-                if (localBackup) {
-                    const backup = JSON.parse(localBackup);
-                    if (backup.coin_balance > existing.coin_balance) {
-                        existing.coin_balance = backup.coin_balance;
-                        existing.task_level = backup.task_level;
-                        currentTapsCount = backup.current_taps || 0;
-                    }
+                
+                if (insertError) {
+                    console.error("Insert error:", insertError);
+                    loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
+                } else {
+                    loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
                 }
+            } else {
+                // Existing user
+                let existing = user[0];
+                try {
+                    const localBackup = localStorage.getItem(`origen_backup_${existing.phone_number}`);
+                    if (localBackup) {
+                        const backup = JSON.parse(localBackup);
+                        if (backup.coin_balance > existing.coin_balance) {
+                            existing.coin_balance = backup.coin_balance;
+                            existing.task_level = backup.task_level;
+                            currentTapsCount = backup.current_taps || 0;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Local storage access issue:", e);
+                }
+                
                 if (currentTapsCount >= 500) isCoinLocked = true;
                 loadDashboard(existing);
             }
         } catch (err) {
             console.error("Login error:", err);
+            // Fallback to local mode
             loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
         }
-        
-        loginBtn.innerText = "Enter Mining Hub";
-        loginBtn.disabled = false;
     });
 }
 
@@ -276,9 +303,13 @@ if (tapCoin) {
 // ====================================================================
 function saveProgressLocally() {
     if (!currentUser) return;
-    localStorage.setItem(`origen_backup_${currentUser.phone_number}`, JSON.stringify({
-        coin_balance: currentUser.coin_balance, task_level: currentUser.task_level, current_taps: currentTapsCount
-    }));
+    try {
+        localStorage.setItem(`origen_backup_${currentUser.phone_number}`, JSON.stringify({
+            coin_balance: currentUser.coin_balance, task_level: currentUser.task_level, current_taps: currentTapsCount
+        }));
+    } catch (e) {
+        console.warn("Local storage save failed:", e);
+    }
 }
 
 function createFloatingHitTextEffect(e) {
@@ -328,17 +359,34 @@ async function renderActiveTask() {
     const watchBtn = document.getElementById('watch-btn');
     const claimBtn = document.getElementById('claim-btn');
     const storageKey = `origen_timer_end_${currentUser.phone_number}_lvl_${currentUser.task_level}`;
-    let savedEndTime = localStorage.getItem(storageKey);
+    let savedEndTime = null;
+    
+    try {
+        savedEndTime = localStorage.getItem(storageKey);
+    } catch (e) {
+        console.warn("LocalStorage access restricted");
+    }
 
     if (savedEndTime) {
         runTaskTimer(parseInt(savedEndTime), claimBtn, watchBtn, storageKey, currentTask);
     }
 
     watchBtn.addEventListener('click', () => {
-        if(localStorage.getItem(storageKey)) return;
+        try {
+            if(localStorage.getItem(storageKey)) return;
+        } catch (e) {
+            console.warn("LocalStorage access restricted");
+        }
+        
         window.open(currentTask.videoUrl, '_blank');
         const end = Date.now() + (currentTask.duration * 1000);
-        localStorage.setItem(storageKey, end);
+        
+        try {
+            localStorage.setItem(storageKey, end);
+        } catch (e) {
+            console.warn("Could not save timer to localStorage");
+        }
+        
         runTaskTimer(end, claimBtn, watchBtn, storageKey, currentTask);
     });
 
@@ -347,7 +395,13 @@ async function renderActiveTask() {
         currentUser.task_level += 1;
         currentTapsCount = 0;
         isCoinLocked = false;
-        localStorage.removeItem(storageKey);
+        
+        try {
+            localStorage.removeItem(storageKey);
+        } catch (e) {
+            console.warn("Could not remove timer from localStorage");
+        }
+        
         showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
         renderActiveTask();
         updateTapProgressUI();
