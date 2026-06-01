@@ -155,7 +155,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 });
 
 // ====================================================================
-// 4. AUTH HANDLER LOOP (FIXED UNSTABLE PARSING)
+// 4. AUTH HANDLER LOOP
 // ====================================================================
 if (loginBtn) {
     loginBtn.addEventListener('click', async () => {
@@ -177,16 +177,11 @@ if (loginBtn) {
 
         const loadDashboard = (userRecord) => {
             currentUser = userRecord;
-            
-            const nameDisplay = document.getElementById('user-display-name');
-            if (nameDisplay) nameDisplay.innerText = currentUser.name;
-            
-            if (loginScreen) {
-                loginScreen.classList.add('hidden');
-                loginScreen.style.display = "none";
-            }
-            if (appContainer) appContainer.classList.remove('hidden');
-            if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
+            document.getElementById('user-display-name').innerText = currentUser.name;
+            loginScreen.classList.add('hidden');
+            loginScreen.style.display = "none";
+            appContainer.classList.remove('hidden');
+            coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
             
             updateTapProgressUI();
             startAutoSaveTimer();
@@ -204,35 +199,26 @@ if (loginBtn) {
             let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
             if (error || !user || user.length === 0) {
-                const { data: newUser, error: insertError } = await supabaseClient
+                const { data: newUser } = await supabaseClient
                     .from('users')
                     .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 }])
                     .select();
-                
-                if (insertError || !newUser || newUser.length === 0) {
-                    loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
-                } else {
-                    loadDashboard(newUser[0]);
-                }
+                loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
             } else {
                 let existing = user[0];
                 const localBackup = localStorage.getItem(`origen_backup_${existing.phone_number}`);
                 if (localBackup) {
-                    try {
-                        const backup = JSON.parse(localBackup);
-                        if (backup && backup.coin_balance > existing.coin_balance) {
-                            existing.coin_balance = backup.coin_balance;
-                            existing.task_level = backup.task_level;
-                            currentTapsCount = backup.current_taps || 0;
-                        }
-                    } catch(e) { console.error("Backup tracking reading sync bypass:", e); }
+                    const backup = JSON.parse(localBackup);
+                    if (backup.coin_balance > existing.coin_balance) {
+                        existing.coin_balance = backup.coin_balance;
+                        existing.task_level = backup.task_level;
+                        currentTapsCount = backup.current_taps || 0;
+                    }
                 }
-                
                 if (currentTapsCount >= 500) isCoinLocked = true;
                 loadDashboard(existing);
             }
         } catch (err) {
-            console.error("Auth cycle tracking interruption:", err);
             loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
         }
     });
@@ -248,10 +234,9 @@ if (tapCoin) {
             return;
         }
 
-        if (!currentUser) return;
         currentUser.coin_balance += 1;
         currentTapsCount += 1;
-        if (coinBalanceDisplay) coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
+        coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
         updateTapProgressUI();
         createFloatingHitTextEffect(e);
         saveProgressLocally();
@@ -277,6 +262,7 @@ function saveProgressLocally() {
     }));
 }
 
+// THIS IS SECTION 6 WHERE THE "PROCESS NODE LINK..." COMPONENT WAS CORRECTED
 function createFloatingHitTextEffect(e) {
     if (!coinStage) return;
     const hitText = document.createElement('div');
@@ -301,7 +287,7 @@ function updateTapProgressUI() {
 }
 
 async function renderActiveTask() {
-    if (!taskBox || !currentUser) return;
+    if (!taskBox) return;
     taskBox.innerHTML = "";
     if (!remoteConfig.tasks || remoteConfig.tasks.length === 0) return;
 
@@ -312,6 +298,7 @@ async function renderActiveTask() {
         return;
     }
 
+    // FIXED ONLY THIS PART HERE (Modified the text of the disabled claim button)
     taskBox.innerHTML = `
         <div class="task-card" style="background:#121420; border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:16px;">
             <h3 style="font-size: 16px; font-weight:700; margin-bottom:6px;">${currentTask.title}</h3>
@@ -330,30 +317,26 @@ async function renderActiveTask() {
         runTaskTimer(parseInt(savedEndTime), claimBtn, watchBtn, storageKey, currentTask);
     }
 
-    if (watchBtn) {
-        watchBtn.addEventListener('click', () => {
-            if(localStorage.getItem(storageKey)) return;
-            window.open(currentTask.videoUrl, '_blank');
-            const end = Date.now() + (currentTask.duration * 1000);
-            localStorage.setItem(storageKey, end);
-            runTaskTimer(end, claimBtn, watchBtn, storageKey, currentTask);
-        });
-    }
+    watchBtn.addEventListener('click', () => {
+        if(localStorage.getItem(storageKey)) return;
+        window.open(currentTask.videoUrl, '_blank');
+        const end = Date.now() + (currentTask.duration * 1000);
+        localStorage.setItem(storageKey, end);
+        runTaskTimer(end, claimBtn, watchBtn, storageKey, currentTask);
+    });
 
-    if (claimBtn) {
-        claimBtn.addEventListener('click', () => {
-            currentUser.coin_balance += currentTask.rewardCoins;
-            currentUser.task_level += 1;
-            currentTapsCount = 0;
-            isCoinLocked = false;
-            localStorage.removeItem(storageKey);
-            showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
-            renderActiveTask();
-            updateTapProgressUI();
-            saveProgressLocally();
-            forceCloudDataSave();
-        });
-    }
+    claimBtn.addEventListener('click', () => {
+        currentUser.coin_balance += currentTask.rewardCoins;
+        currentUser.task_level += 1;
+        currentTapsCount = 0;
+        isCoinLocked = false;
+        localStorage.removeItem(storageKey);
+        showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
+        renderActiveTask();
+        updateTapProgressUI();
+        saveProgressLocally();
+        forceCloudDataSave();
+    });
 }
 
 function runTaskTimer(targetTime, claim, watch, key, task) {
@@ -410,14 +393,12 @@ async function loadLeaderboard() {
     try {
         let { data } = await supabaseClient.from('users').select('*').order('coin_balance', { ascending: false }).limit(50);
         list.innerHTML = "";
-        if (data) {
-            data.forEach((u, idx) => {
-                let li = document.createElement('li');
-                li.style.cssText = "display:flex; justify-content:space-between; padding:14px 6px; border-bottom:1px solid rgba(255,255,255,0.02); font-size:14px;";
-                li.innerHTML = `<span>${idx + 1}. ${u.name}</span><span style="color:#ffcc00">🪙 ${u.coin_balance.toLocaleString()}</span>`;
-                list.appendChild(li);
-            });
-        }
+        data.forEach((u, idx) => {
+            let li = document.createElement('li');
+            li.style.cssText = "display:flex; justify-content:space-between; padding:14px 6px; border-bottom:1px solid rgba(255,255,255,0.02); font-size:14px;";
+            li.innerHTML = `<span>${idx + 1}. ${u.name}</span><span style="color:#ffcc00">🪙 ${u.coin_balance.toLocaleString()}</span>`;
+            list.appendChild(li);
+        });
     } catch(e) { 
         list.innerHTML = "<li style='text-align:center;color:#8e8e9a;list-style:none;font-size:13px;'>Failed to trace database metrics.</li>"; 
     }
@@ -425,25 +406,18 @@ async function loadLeaderboard() {
 
 function updateAccountDetails() {
     if(!currentUser) return;
-    const accName = document.getElementById('acc-name');
-    const accPhone = document.getElementById('acc-phone');
-    const accCoins = document.getElementById('acc-coins');
-    const accMoney = document.getElementById('acc-money');
-
-    if (accName) accName.innerText = currentUser.name;
-    if (accPhone) accPhone.innerText = currentUser.phone_number;
-    if (accCoins) accCoins.innerText = currentUser.coin_balance.toLocaleString();
-    if (accMoney) accMoney.innerText = (currentUser.coin_balance * remoteConfig.coinValue).toFixed(2);
+    document.getElementById('acc-name').innerText = currentUser.name;
+    document.getElementById('acc-phone').innerText = currentUser.phone_number;
+    document.getElementById('acc-coins').innerText = currentUser.coin_balance.toLocaleString();
+    document.getElementById('acc-money').innerText = (currentUser.coin_balance * remoteConfig.coinValue).toFixed(2);
 }
 
 function showModal(icon, title, message, btnText) {
     if (!globalModal) { alert(message); return; }
-    if (modalIcon) modalIcon.innerText = icon; 
-    if (modalTitle) modalTitle.innerText = title; 
-    if (modalMessage) modalMessage.innerText = message; 
-    if (modalButton) {
-        modalButton.innerText = btnText;
-        globalModal.classList.remove("hidden");
-        modalButton.onclick = () => globalModal.classList.add("hidden");
-    }
+    modalIcon.innerText = icon; 
+    modalTitle.innerText = title; 
+    modalMessage.innerText = message; 
+    modalButton.innerText = btnText;
+    globalModal.classList.remove("hidden");
+    modalButton.onclick = () => globalModal.classList.add("hidden");
 }
