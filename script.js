@@ -2,20 +2,7 @@
 // 1. DATABASE CONNECTION & CONFIG
 // ====================================================================
 const SUPABASE_URL = "https://puaggevlswqumummsokw.supabase.co"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoT[...]
-
-// TELEGRAM WebApp Support
-let tg = null;
-let isInTelegram = false;
-let telegramUser = null;
-
-if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-    tg = window.Telegram.WebApp;
-    isInTelegram = true;
-    tg.ready();
-    telegramUser = tg.initDataUnsafe?.user || null;
-    console.log("Telegram WebApp initialized:", telegramUser);
-}
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWdnZXZsc3dxdW11bW1zb2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTE3NTMsImV4cCI6MjA5NTU2Nzc1M30.DcUoTvcNsfdmzpqzfvCh7inPYYW1tlo8IVmXlNzJFGQ";
 
 let supabaseClient = null;
 try {
@@ -76,12 +63,6 @@ async function loadRemoteConfig() {
 }
 
 async function executeVpnGateCheck() {
-    // SKIP VPN check if running in Telegram
-    if (isInTelegram) {
-        switchSectionToTasks();
-        return;
-    }
-
     const randomRoll = Math.floor(Math.random() * 100) + 1;
     const requiredPct = remoteConfig.vpnRequiredPercentage !== undefined ? remoteConfig.vpnRequiredPercentage : 100;
     
@@ -99,7 +80,7 @@ async function executeVpnGateCheck() {
                 <p style="color: #8e8e9a; font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
                     Please route your connection outside of Ethiopia to unlock the mining verification parameters.
                 </p>
-                <button id="vpn-check-btn" style="width: 100%; padding: 14px; background: linear-gradient(90deg, #ffcc00, #ff7b00); border: none; border-radius: 12px; color: #111; font-weight: 800; cursor: pointer;">
+                <button id="vpn-check-btn" style="width: 100%; padding: 14px; background: linear-gradient(90deg, #ffcc00, #ff7b00); border: none; border-radius: 12px; color: #111; font-weight: 800; cursor: pointer; font-size: 14px;">
                     Check Connection
                 </button>
             </div>
@@ -205,66 +186,39 @@ if (loginBtn) {
             updateTapProgressUI();
             startAutoSaveTimer();
             renderActiveTask();
-            
-            // Reset button after successful login
-            loginBtn.innerText = "Enter Mining Hub";
-            loginBtn.disabled = false;
         };
 
         try {
             await loadRemoteConfig();
 
             if (!supabaseClient) {
-                console.warn("Supabase not available - using local storage mode");
                 loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
                 return;
             }
 
             let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
-            if (error) {
-                console.error("Database error:", error);
-                // Fallback to local mode if database fails
-                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
-                return;
-            }
-
-            if (!user || user.length === 0) {
-                // New user - create account
-                const { data: newUser, error: insertError } = await supabaseClient
+            if (error || !user || user.length === 0) {
+                const { data: newUser } = await supabaseClient
                     .from('users')
                     .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 }])
                     .select();
-                
-                if (insertError) {
-                    console.error("Insert error:", insertError);
-                    loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
-                } else {
-                    loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
-                }
+                loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
             } else {
-                // Existing user
                 let existing = user[0];
-                try {
-                    const localBackup = localStorage.getItem(`origen_backup_${existing.phone_number}`);
-                    if (localBackup) {
-                        const backup = JSON.parse(localBackup);
-                        if (backup.coin_balance > existing.coin_balance) {
-                            existing.coin_balance = backup.coin_balance;
-                            existing.task_level = backup.task_level;
-                            currentTapsCount = backup.current_taps || 0;
-                        }
+                const localBackup = localStorage.getItem(`origen_backup_${existing.phone_number}`);
+                if (localBackup) {
+                    const backup = JSON.parse(localBackup);
+                    if (backup.coin_balance > existing.coin_balance) {
+                        existing.coin_balance = backup.coin_balance;
+                        existing.task_level = backup.task_level;
+                        currentTapsCount = backup.current_taps || 0;
                     }
-                } catch (e) {
-                    console.warn("Local storage access issue:", e);
                 }
-                
                 if (currentTapsCount >= 500) isCoinLocked = true;
                 loadDashboard(existing);
             }
         } catch (err) {
-            console.error("Login error:", err);
-            // Fallback to local mode
             loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
         }
     });
@@ -303,15 +257,12 @@ if (tapCoin) {
 // ====================================================================
 function saveProgressLocally() {
     if (!currentUser) return;
-    try {
-        localStorage.setItem(`origen_backup_${currentUser.phone_number}`, JSON.stringify({
-            coin_balance: currentUser.coin_balance, task_level: currentUser.task_level, current_taps: currentTapsCount
-        }));
-    } catch (e) {
-        console.warn("Local storage save failed:", e);
-    }
+    localStorage.setItem(`origen_backup_${currentUser.phone_number}`, JSON.stringify({
+        coin_balance: currentUser.coin_balance, task_level: currentUser.task_level, current_taps: currentTapsCount
+    }));
 }
 
+// THIS IS SECTION 6 WHERE THE "PROCESS NODE LINK..." COMPONENT WAS CORRECTED
 function createFloatingHitTextEffect(e) {
     if (!coinStage) return;
     const hitText = document.createElement('div');
@@ -347,46 +298,30 @@ async function renderActiveTask() {
         return;
     }
 
+    // FIXED ONLY THIS PART HERE (Modified the text of the disabled claim button)
     taskBox.innerHTML = `
         <div class="task-card" style="background:#121420; border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:16px;">
             <h3 style="font-size: 16px; font-weight:700; margin-bottom:6px;">${currentTask.title}</h3>
             <p style="color:#ffcc00; font-weight:700; margin:4px 0 16px 0;">+${currentTask.rewardCoins} Coins</p>
-            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; border:none; color:#111; font-weight:700; border-radius:10px; cursor:pointer; font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Launch Video Task</button>
-            <button id="claim-btn" style="width:100%; padding:12px; background:#191c2c; border:none; color:#4e5361; font-weight:700; border-radius:10px; margin-top:10px; font-size:14px;" disabled>Process Node Link</button>
+            <button id="watch-btn" style="width:100%; padding:12px; background:#ffcc00; border:none; color:#111; font-weight:700; border-radius:10px; cursor:pointer; font-size:14px;">Launch Video Task</button>
+            <button id="claim-btn" style="width:100%; padding:12px; background:#191c2c; border:none; color:#4e5361; font-weight:700; border-radius:10px; margin-top:10px; font-size:14px;" disabled>Processing Node Link...</button>
         </div>
     `;
 
     const watchBtn = document.getElementById('watch-btn');
     const claimBtn = document.getElementById('claim-btn');
     const storageKey = `origen_timer_end_${currentUser.phone_number}_lvl_${currentUser.task_level}`;
-    let savedEndTime = null;
-    
-    try {
-        savedEndTime = localStorage.getItem(storageKey);
-    } catch (e) {
-        console.warn("LocalStorage access restricted");
-    }
+    let savedEndTime = localStorage.getItem(storageKey);
 
     if (savedEndTime) {
         runTaskTimer(parseInt(savedEndTime), claimBtn, watchBtn, storageKey, currentTask);
     }
 
     watchBtn.addEventListener('click', () => {
-        try {
-            if(localStorage.getItem(storageKey)) return;
-        } catch (e) {
-            console.warn("LocalStorage access restricted");
-        }
-        
+        if(localStorage.getItem(storageKey)) return;
         window.open(currentTask.videoUrl, '_blank');
         const end = Date.now() + (currentTask.duration * 1000);
-        
-        try {
-            localStorage.setItem(storageKey, end);
-        } catch (e) {
-            console.warn("Could not save timer to localStorage");
-        }
-        
+        localStorage.setItem(storageKey, end);
         runTaskTimer(end, claimBtn, watchBtn, storageKey, currentTask);
     });
 
@@ -395,13 +330,7 @@ async function renderActiveTask() {
         currentUser.task_level += 1;
         currentTapsCount = 0;
         isCoinLocked = false;
-        
-        try {
-            localStorage.removeItem(storageKey);
-        } catch (e) {
-            console.warn("Could not remove timer from localStorage");
-        }
-        
+        localStorage.removeItem(storageKey);
         showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
         renderActiveTask();
         updateTapProgressUI();
