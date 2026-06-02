@@ -262,7 +262,6 @@ function saveProgressLocally() {
     }));
 }
 
-// THIS IS SECTION 6 WHERE THE "PROCESS NODE LINK..." COMPONENT WAS CORRECTED
 function createFloatingHitTextEffect(e) {
     if (!coinStage) return;
     const hitText = document.createElement('div');
@@ -287,7 +286,7 @@ function updateTapProgressUI() {
 }
 
 async function renderActiveTask() {
-    if (!taskBox) return;
+    if (!taskBox || !currentUser) return; // Added security check to prevent asynchronous breaks
     taskBox.innerHTML = "";
     if (!remoteConfig.tasks || remoteConfig.tasks.length === 0) return;
 
@@ -298,7 +297,6 @@ async function renderActiveTask() {
         return;
     }
 
-    // FIXED ONLY THIS PART HERE (Modified the text of the disabled claim button)
     taskBox.innerHTML = `
         <div class="task-card" style="background:#121420; border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:16px;">
             <h3 style="font-size: 16px; font-weight:700; margin-bottom:6px;">${currentTask.title}</h3>
@@ -314,41 +312,47 @@ async function renderActiveTask() {
     let savedEndTime = localStorage.getItem(storageKey);
 
     if (savedEndTime) {
-        runTaskTimer(parseInt(savedEndTime), claimBtn, watchBtn, storageKey, currentTask);
+        runTaskTimer(parseInt(savedEndTime), currentTask);
     }
 
-    watchBtn.addEventListener('click', () => {
-        if(localStorage.getItem(storageKey)) return;
-        window.open(currentTask.videoUrl, '_blank');
-        const end = Date.now() + (currentTask.duration * 1000);
-        localStorage.setItem(storageKey, end);
-        runTaskTimer(end, claimBtn, watchBtn, storageKey, currentTask);
-    });
+    if (watchBtn) {
+        watchBtn.addEventListener('click', () => {
+            if(localStorage.getItem(storageKey)) return;
+            window.open(currentTask.videoUrl, '_blank');
+            const end = Date.now() + (currentTask.duration * 1000);
+            localStorage.setItem(storageKey, end);
+            runTaskTimer(end, currentTask);
+        });
+    }
 
-    claimBtn.addEventListener('click', () => {
-        currentUser.coin_balance += currentTask.rewardCoins;
-        currentUser.task_level += 1;
-        currentTapsCount = 0;
-        isCoinLocked = false;
-        localStorage.removeItem(storageKey);
-        showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
-        renderActiveTask();
-        updateTapProgressUI();
-        saveProgressLocally();
-        forceCloudDataSave();
-    });
+    if (claimBtn) {
+        claimBtn.addEventListener('click', () => {
+            currentUser.coin_balance += currentTask.rewardCoins;
+            currentUser.task_level += 1;
+            currentTapsCount = 0;
+            isCoinLocked = false;
+            localStorage.removeItem(storageKey);
+            showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
+            renderActiveTask();
+            updateTapProgressUI();
+            saveProgressLocally();
+            forceCloudDataSave();
+        });
+    }
 }
 
-function runTaskTimer(targetTime, claim, watch, key, task) {
-    if (watch) { 
-        watch.innerText = "✔ Loop Processing"; 
-        watch.style.background = "#0d0f18"; 
-        watch.style.color = "#4e5361"; 
-        watch.style.cursor = "default"; 
-    }
-    if (taskCountdownTimer) clearInterval(taskCountdownTimer);
-    
-    taskCountdownTimer = setInterval(() => {
+function runTaskTimer(targetTime, task) {
+    const updateUI = () => {
+        const watch = document.getElementById('watch-btn');
+        const claim = document.getElementById('claim-btn');
+        
+        if (watch) { 
+            watch.innerText = "✔ Loop Processing"; 
+            watch.style.background = "#0d0f18"; 
+            watch.style.color = "#4e5361"; 
+            watch.style.cursor = "default"; 
+        }
+        
         let diff = targetTime - Date.now();
         if (diff <= 0) {
             clearInterval(taskCountdownTimer);
@@ -364,7 +368,11 @@ function runTaskTimer(targetTime, claim, watch, key, task) {
             let secs = Math.ceil(diff / 1000);
             if (claim) claim.innerText = `Analyzing Sync (${secs}s)`;
         }
-    }, 1000);
+    };
+
+    if (taskCountdownTimer) clearInterval(taskCountdownTimer);
+    updateUI(); // Run immediately to prevent layout pop or empty frames
+    taskCountdownTimer = setInterval(updateUI, 1000);
 }
 
 function startAutoSaveTimer() {
