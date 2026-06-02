@@ -224,16 +224,17 @@ if (loginBtn) {
             await loadRemoteConfig();
 
             if (!supabaseClient) {
-                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
+                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 });
                 return;
             }
 
             let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
             if (error || !user || user.length === 0) {
+                const startingMoney = 0 * remoteConfig.coinValue;
                 const { data: newUser } = await supabaseClient
                     .from('users')
-                    .insert([{ name: name, phone_number: phone, coin_balance: 0, task_level: 1 }])
+                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: startingMoney, task_level: 1 }])
                     .select();
                 loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
             } else {
@@ -299,7 +300,6 @@ function saveProgressLocally() {
     }));
 }
 
-// Visual Floating Text Loop
 function createFloatingHitTextEffect(e) {
     if (!coinStage) return;
     const hitText = document.createElement('div');
@@ -450,12 +450,14 @@ async function forceCloudDataSave() {
     syncStatus.innerText = "● Syncing Data...";
     syncStatus.style.color = "#ffcc00";
 
+    const computedMoney = parseFloat((currentUser.coin_balance * remoteConfig.coinValue).toFixed(2));
+
     try {
-        // Because Supabase handles money_balance as a Generated column,
-        // we only pass coin_balance and task_level to trigger calculations.
+        // Direct script calculation sent straight into the cloud table placeholder row
         await supabaseClient.from('users').update({ 
             coin_balance: currentUser.coin_balance, 
-            task_level: currentUser.task_level
+            task_level: currentUser.task_level,
+            money_balance: computedMoney
         }).eq('phone_number', currentUser.phone_number);
         
         syncStatus.innerText = "● Secure Cloud Synced";
