@@ -133,7 +133,6 @@ function switchSectionToTasks() {
     renderActiveTask();
 }
 
-// Programmatic Router helper function to securely switch screens on Mobile displays
 function navigateToScreen(screenTargetId) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
@@ -341,23 +340,13 @@ async function renderActiveTask() {
             isCoinLocked = false;
             localStorage.removeItem(storageKey);
             
-            // Render the screen structure update prior to loading modal context
             renderActiveTask();
             updateTapProgressUI();
             saveProgressLocally();
             forceCloudDataSave();
 
-            // Fire explicit modal notification
-            showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
-            
-            // Redirect the user automatically back to the tap/home page context upon validation exit
-            if (globalModal) {
-                const oldCallback = modalButton.onclick;
-                modalButton.onclick = () => {
-                    if (typeof oldCallback === 'function') oldCallback();
-                    navigateToScreen('home-screen'); // Programmatically force navigation back to home layout frame
-                };
-            }
+            // Open confirmation modal and setup redirection parameters straight to home navigation viewport
+            showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed", "home-screen");
         });
     }
 }
@@ -396,7 +385,6 @@ function runTaskTimer(targetTime, task) {
     taskCountdownTimer = setInterval(updateUI, 1000);
 }
 
-// Mobile tab suspension recovery logic triggers recalculations on focus wake up event chains
 function syncFromSuspensionEvent() {
     if (!currentUser) return;
     const storageKey = `origen_timer_end_${currentUser.phone_number}_lvl_${currentUser.task_level}`;
@@ -456,12 +444,19 @@ function updateAccountDetails() {
     document.getElementById('acc-money').innerText = (currentUser.coin_balance * remoteConfig.coinValue).toFixed(2);
 }
 
-function showModal(icon, title, message, btnText) {
+function showModal(icon, title, message, btnText, redirectToScreenId = null) {
     if (!globalModal) { alert(message); return; }
     modalIcon.innerText = icon; 
     modalTitle.innerText = title; 
     modalMessage.innerText = message; 
     modalButton.innerText = btnText;
+    
     globalModal.classList.remove("hidden");
-    modalButton.onclick = () => globalModal.classList.add("hidden");
+    
+    modalButton.onclick = () => {
+        globalModal.classList.add("hidden");
+        if (redirectToScreenId) {
+            navigateToScreen(redirectToScreenId);
+        }
+    };
 }
