@@ -271,11 +271,12 @@ body {
    SYSTEM FOOTER NAVIGATION
    ==================================================================== */
 .bottom-nav {
-    position: absolute;
+    position: fixed;   /* Locked securely to the phone screen bottom edge */
     bottom: 0; left: 0; width: 100%; height: 70px;
     background: #0e101a;
     border-top: 1px solid rgba(255,255,255,0.03);
     display: flex; justify-content: space-around; align-items: center;
+    z-index: 1000;     /* Layered on top of your content screens */
 }
 
 .nav-btn { background: none; border: none; color: #4e5361; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex: 1; }
