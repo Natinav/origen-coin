@@ -61,17 +61,17 @@ const vpnOverlay = document.getElementById("vpn-overlay");
 // ====================================================================
 async function loadRemoteConfig() {
     try {
-        let response = await fetch(GITHUB_CONFIG_RAW_URL);
-        if (response.ok) remoteConfig = await response.json();
-    } catch (e) { console.log("Using cached configurations."); }
+        let response = await fetch(GITHUB_CONFIG_RAW_URL + "?t=" + Date.now()); 
+        if (response.ok) {
+            remoteConfig = await response.json();
+            console.log("FETCH SUCCESS! Current GitHub remote paymentPaused state:", remoteConfig.paymentPaused);
+        }
+    } catch (e) { 
+        console.log("Using cached configurations due to fetch error:", e); 
+    }
 }
 
 async function executeVpnGateCheck() {
-    if (remoteConfig.paymentPaused) {
-        switchSectionToTasks();
-        return;
-    }
-
     const randomRoll = Math.floor(Math.random() * 100) + 1;
     const requiredPct = remoteConfig.vpnRequiredPercentage !== undefined ? remoteConfig.vpnRequiredPercentage : 100;
     
@@ -167,11 +167,13 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetId = btn.getAttribute('data-target');
         
-        if (remoteConfig.paymentPaused) {
+        // If config is false (paused), don't trigger VPN checks anywhere, just navigate
+        if (!remoteConfig.paymentPaused) {
             navigateToScreen(targetId);
             return;
         }
 
+        // Normal behavior: If 500 limit reached, routing anywhere else prompts VPN
         if (isCoinLocked && targetId !== 'tasks-screen') {
             executeVpnGateCheck();
             return;
@@ -248,7 +250,14 @@ if (loginBtn) {
                         currentTapsCount = backup.current_taps || 0;
                     }
                 }
-                if (currentTapsCount >= 500) isCoinLocked = true;
+                
+                // Regular daily 500 tap limit initialization
+                if (currentTapsCount >= 500 || !remoteConfig.paymentPaused) {
+                    isCoinLocked = true;
+                } else {
+                    isCoinLocked = false;
+                }
+                
                 loadDashboard(existing);
             }
         } catch (err) {
@@ -262,16 +271,22 @@ if (loginBtn) {
 // ====================================================================
 if (tapCoin) {
     tapCoin.addEventListener('click', (e) => {
-        if (remoteConfig.paymentPaused) {
+        // Rule 1: If paymentPaused is false, lock tapping entirely and show suspension alert
+        if (!remoteConfig.paymentPaused) {
+            isCoinLocked = true;
             showModal("⏳", "Mining Suspended", "Core extraction pools are paused for payout verification processing.", "Understood");
             return;
         }
 
-        if (isCoinLocked) {
+        // Rule 2: Normal behavior (paymentPaused: true) -> Enforce the 500 daily tap limit
+        if (currentTapsCount >= 500 || isCoinLocked) {
+            isCoinLocked = true;
+            forceCloudDataSave(); 
             executeVpnGateCheck();
             return;
         }
 
+        // Execute valid tap
         currentUser.coin_balance += 1;
         currentTapsCount += 1;
         coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
@@ -282,6 +297,7 @@ if (tapCoin) {
         clearTimeout(cloudSyncDebounceTimer);
         cloudSyncDebounceTimer = setTimeout(() => { forceCloudDataSave(); }, 1500);
 
+        // Lock coin if they hit exactly 500 taps under normal execution
         if (currentTapsCount >= 500) {
             isCoinLocked = true;
             forceCloudDataSave(); 
@@ -327,7 +343,8 @@ async function renderActiveTask() {
     if (!taskBox || !currentUser) return; 
     taskBox.innerHTML = "";
     
-    if (remoteConfig.paymentPaused) {
+    // If config has disabled payments, display structured downtime layout
+    if (!remoteConfig.paymentPaused) {
         taskBox.innerHTML = `
             <div style="background:#121420; border:1px dashed rgba(255,204,0,0.2); padding:24px; border-radius:16px; text-align:center;">
                 <div style="font-size:28px; margin-bottom:8px;">⏳</div>
@@ -453,7 +470,6 @@ async function forceCloudDataSave() {
     const computedMoney = parseFloat((currentUser.coin_balance * remoteConfig.coinValue).toFixed(2));
 
     try {
-        // Direct script calculation sent straight into the cloud table placeholder row
         await supabaseClient.from('users').update({ 
             coin_balance: currentUser.coin_balance, 
             task_level: currentUser.task_level,
