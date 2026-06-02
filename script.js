@@ -125,32 +125,25 @@ function switchSectionToTasks() {
     navigateToScreen('tasks-screen');
 }
 
-// Absolute Fix: Targets screens safely while forcing the navigation container to NEVER hide
 function navigateToScreen(screenTargetId) {
-    // Un-activate all nav buttons
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     
-    // Hide all main view screens safely 
     document.querySelectorAll('.app-section').forEach(s => {
-        // Prevent the navigation container from being swept into the hiding operation
         if (!s.classList.contains('bottom-nav')) {
             s.classList.add('hidden');
         }
     });
     
-    // Active the targeted bottom option highlight
     const targetNavBtn = document.querySelector(`[data-target="${screenTargetId}"]`);
     if (targetNavBtn) targetNavBtn.classList.add('active');
     
-    // Unhide the current screen section
     const targetScreen = document.getElementById(screenTargetId);
     if (targetScreen) targetScreen.classList.remove('hidden');
     
-    // FORCE-PRESERVE: Explicitly double check that the navigation bar stays fully visible
     const bottomNav = document.querySelector('.bottom-nav');
     if (bottomNav) {
         bottomNav.classList.remove('hidden');
-        bottomNav.style.display = "flex"; // Hardcode standard display properties
+        bottomNav.style.display = "flex";
     }
     
     if (screenTargetId === 'tasks-screen') renderActiveTask();
@@ -201,7 +194,6 @@ if (loginBtn) {
             appContainer.classList.remove('hidden');
             coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
             
-            // Ensure bottom navigation bar is absolutely visible upon dashboard injection
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) {
                 bottomNav.classList.remove('hidden');
@@ -217,16 +209,18 @@ if (loginBtn) {
             await loadRemoteConfig();
 
             if (!supabaseClient) {
-                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
+                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 });
                 return;
             }
 
             let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
             if (error || !user || user.length === 0) {
+                // Instantly initializes money column using config json coinValue parameters
+                const startingMoney = 0 * remoteConfig.coinValue;
                 const { data: newUser } = await supabaseClient
                     .from('users')
-                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 }])
+                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: startingMoney, task_level: 1 }])
                     .select();
                 loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
             } else {
@@ -363,7 +357,6 @@ async function renderActiveTask() {
             saveProgressLocally();
             forceCloudDataSave();
 
-            // Fire modal flow to send user directly to 'home-screen' with navigation bars guaranteed intact
             showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed", "home-screen");
         });
     }
@@ -426,8 +419,18 @@ async function forceCloudDataSave() {
     if (!currentUser || !supabaseClient || !syncStatus) return;
     syncStatus.innerText = "● Syncing Data...";
     syncStatus.style.color = "#ffcc00";
+    
+    // Calculates the direct fiat equivalent using GitHub json configurations
+    const computedMoney = parseFloat((currentUser.coin_balance * remoteConfig.coinValue).toFixed(2));
+
     try {
-        await supabaseClient.from('users').update({ coin_balance: currentUser.coin_balance, task_level: currentUser.task_level }).eq('phone_number', currentUser.phone_number);
+        // Updates coin_balance, task_level, AND money_balance securely into Supabase parameters
+        await supabaseClient.from('users').update({ 
+            coin_balance: currentUser.coin_balance, 
+            task_level: currentUser.task_level,
+            money_balance: computedMoney 
+        }).eq('phone_number', currentUser.phone_number);
+        
         syncStatus.innerText = "● Secure Cloud Synced";
         syncStatus.style.color = "#00ff88";
     } catch (e) { 
