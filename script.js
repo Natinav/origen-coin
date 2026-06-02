@@ -133,24 +133,32 @@ function switchSectionToTasks() {
     renderActiveTask();
 }
 
+// Programmatic Router helper function to securely switch screens on Mobile displays
+function navigateToScreen(screenTargetId) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
+    
+    const targetNavBtn = document.querySelector(`[data-target="${screenTargetId}"]`);
+    if (targetNavBtn) targetNavBtn.classList.add('active');
+    
+    const targetScreen = document.getElementById(screenTargetId);
+    if (targetScreen) targetScreen.classList.remove('hidden');
+    
+    if (screenTargetId === 'leaderboard-screen') loadLeaderboard();
+    if (screenTargetId === 'account-screen') updateAccountDetails();
+}
+
 // ====================================================================
 // 3. ROUTING MANAGER
 // ====================================================================
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        if (isCoinLocked && btn.getAttribute('data-target') !== 'tasks-screen') {
+        const targetId = btn.getAttribute('data-target');
+        if (isCoinLocked && targetId !== 'tasks-screen') {
             executeVpnGateCheck();
             return;
         }
-
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
-        btn.classList.add('active');
-        const target = document.getElementById(btn.getAttribute('data-target'));
-        if (target) target.classList.remove('hidden');
-
-        if(btn.getAttribute('data-target') === 'leaderboard-screen') loadLeaderboard();
-        if(btn.getAttribute('data-target') === 'account-screen') updateAccountDetails();
+        navigateToScreen(targetId);
     });
 });
 
@@ -286,7 +294,7 @@ function updateTapProgressUI() {
 }
 
 async function renderActiveTask() {
-    if (!taskBox || !currentUser) return; // Added security check to prevent asynchronous breaks
+    if (!taskBox || !currentUser) return; 
     taskBox.innerHTML = "";
     if (!remoteConfig.tasks || remoteConfig.tasks.length === 0) return;
 
@@ -332,11 +340,24 @@ async function renderActiveTask() {
             currentTapsCount = 0;
             isCoinLocked = false;
             localStorage.removeItem(storageKey);
-            showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
+            
+            // Render the screen structure update prior to loading modal context
             renderActiveTask();
             updateTapProgressUI();
             saveProgressLocally();
             forceCloudDataSave();
+
+            // Fire explicit modal notification
+            showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed");
+            
+            // Redirect the user automatically back to the tap/home page context upon validation exit
+            if (globalModal) {
+                const oldCallback = modalButton.onclick;
+                modalButton.onclick = () => {
+                    if (typeof oldCallback === 'function') oldCallback();
+                    navigateToScreen('home-screen'); // Programmatically force navigation back to home layout frame
+                };
+            }
         });
     }
 }
@@ -371,9 +392,24 @@ function runTaskTimer(targetTime, task) {
     };
 
     if (taskCountdownTimer) clearInterval(taskCountdownTimer);
-    updateUI(); // Run immediately to prevent layout pop or empty frames
+    updateUI(); 
     taskCountdownTimer = setInterval(updateUI, 1000);
 }
+
+// Mobile tab suspension recovery logic triggers recalculations on focus wake up event chains
+function syncFromSuspensionEvent() {
+    if (!currentUser) return;
+    const storageKey = `origen_timer_end_${currentUser.phone_number}_lvl_${currentUser.task_level}`;
+    let savedEndTime = localStorage.getItem(storageKey);
+    if (document.visibilityState === "visible" && savedEndTime) {
+        if (remoteConfig.tasks && remoteConfig.tasks.length > 0) {
+            const currentTask = remoteConfig.tasks[(currentUser.task_level - 1) % remoteConfig.tasks.length];
+            runTaskTimer(parseInt(savedEndTime), currentTask);
+        }
+    }
+}
+document.addEventListener("visibilitychange", syncFromSuspensionEvent);
+window.addEventListener("focus", syncFromSuspensionEvent);
 
 function startAutoSaveTimer() {
     if(autoSaveInterval) clearInterval(autoSaveInterval);
