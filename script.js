@@ -61,10 +61,25 @@ const vpnOverlay = document.getElementById("vpn-overlay");
 // ====================================================================
 async function loadRemoteConfig() {
     try {
-        let response = await fetch(GITHUB_CONFIG_RAW_URL + "?t=" + Date.now()); 
+        // Force the browser to completely bypass cache by appending a random unique string
+        let response = await fetch(GITHUB_CONFIG_RAW_URL + "?nocache=" + Math.random() + "&t=" + Date.now()); 
+        
         if (response.ok) {
-            remoteConfig = await response.json();
-            console.log("FETCH SUCCESS! Current GitHub remote paymentPaused state:", remoteConfig.paymentPaused);
+            let data = await response.json();
+            
+            // Safe Type Casting: If GitHub sends "false" (text) or false (boolean), ensure it becomes a real boolean false
+            if (data.paymentPaused === "false" || data.paymentPaused === false) {
+                remoteConfig.paymentPaused = false;
+            } else {
+                remoteConfig.paymentPaused = true;
+            }
+
+            // Sync any other values that might be in your config
+            if (data.coinValue !== undefined) remoteConfig.coinValue = data.coinValue;
+            if (data.vpnRequiredPercentage !== undefined) remoteConfig.vpnRequiredPercentage = data.vpnRequiredPercentage;
+            if (data.tasks !== undefined) remoteConfig.tasks = data.tasks;
+
+            console.log("FETCH SUCCESS! Verified paymentPaused state is:", remoteConfig.paymentPaused);
         }
     } catch (e) { 
         console.log("Using cached configurations due to fetch error:", e); 
@@ -159,7 +174,6 @@ function navigateToScreen(screenTargetId) {
     if (screenTargetId === 'leaderboard-screen') loadLeaderboard();
     if (screenTargetId === 'account-screen') updateAccountDetails();
 }
-
 // ====================================================================
 // 3. ROUTING MANAGER
 // ====================================================================
