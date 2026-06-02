@@ -20,10 +20,13 @@ try {
 const GITHUB_CONFIG_RAW_URL = "https://raw.githubusercontent.com/Natinav/origen-config/refs/heads/main/config.json";
 
 let remoteConfig = {
-    coinValue: 0.12, 
+    coinValue: 0.05, 
     vpnRequiredPercentage: 100,
-    paymentPaused: false, // Default fallback state
-    tasks: [{ title: "Task Phase Alpha: Sync Node", rewardCoins: 1500, duration: 15, videoUrl: "https://www.youtube.com" }] 
+    paymentPaused: false, 
+    tasks: [
+        { level: 1, title: "Quest 1: Watch Origen Launch Trailer", videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duration: 60, rewardCoins: 1000 },
+        { level: 2, title: "Quest 2: Learn How to Claim Telebirr Payouts", videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", duration: 120, rewardCoins: 2500 }
+    ] 
 };
 
 let currentUser = null;       
@@ -64,7 +67,6 @@ async function loadRemoteConfig() {
 }
 
 async function executeVpnGateCheck() {
-    // If payments/mining are paused, skip VPN checks entirely
     if (remoteConfig.paymentPaused) {
         switchSectionToTasks();
         return;
@@ -165,7 +167,6 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetId = btn.getAttribute('data-target');
         
-        // If system is paused, let navigation bypass blocks completely so they can browse tabs
         if (remoteConfig.paymentPaused) {
             navigateToScreen(targetId);
             return;
@@ -223,17 +224,16 @@ if (loginBtn) {
             await loadRemoteConfig();
 
             if (!supabaseClient) {
-                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, money_balance: 0.00, task_level: 1 });
+                loadDashboard({ name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
                 return;
             }
 
             let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
             if (error || !user || user.length === 0) {
-                const startingMoney = 0 * remoteConfig.coinValue;
                 const { data: newUser } = await supabaseClient
                     .from('users')
-                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: startingMoney, money: startingMoney, task_level: 1 }])
+                    .insert([{ name: name, phone_number: phone, coin_balance: 0, task_level: 1 }])
                     .select();
                 loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
             } else {
@@ -261,7 +261,6 @@ if (loginBtn) {
 // ====================================================================
 if (tapCoin) {
     tapCoin.addEventListener('click', (e) => {
-        // PAUSE ENGINE CHECK: Disables tapping cleanly if switch is turned on
         if (remoteConfig.paymentPaused) {
             showModal("⏳", "Mining Suspended", "Core extraction pools are paused for payout verification processing.", "Understood");
             return;
@@ -300,6 +299,7 @@ function saveProgressLocally() {
     }));
 }
 
+// Visual Floating Text Loop
 function createFloatingHitTextEffect(e) {
     if (!coinStage) return;
     const hitText = document.createElement('div');
@@ -327,7 +327,6 @@ async function renderActiveTask() {
     if (!taskBox || !currentUser) return; 
     taskBox.innerHTML = "";
     
-    // PAUSE ENGINE CHECK: Replaces standard cards with custom message while preserving structural views
     if (remoteConfig.paymentPaused) {
         taskBox.innerHTML = `
             <div style="background:#121420; border:1px dashed rgba(255,204,0,0.2); padding:24px; border-radius:16px; text-align:center;">
@@ -450,15 +449,13 @@ async function forceCloudDataSave() {
     if (!currentUser || !supabaseClient || !syncStatus) return;
     syncStatus.innerText = "● Syncing Data...";
     syncStatus.style.color = "#ffcc00";
-    
-    const computedMoney = parseFloat((currentUser.coin_balance * remoteConfig.coinValue).toFixed(2));
 
     try {
+        // Because Supabase handles money_balance as a Generated column,
+        // we only pass coin_balance and task_level to trigger calculations.
         await supabaseClient.from('users').update({ 
             coin_balance: currentUser.coin_balance, 
-            task_level: currentUser.task_level,
-            money_balance: computedMoney,
-            money: computedMoney
+            task_level: currentUser.task_level
         }).eq('phone_number', currentUser.phone_number);
         
         syncStatus.innerText = "● Secure Cloud Synced";
