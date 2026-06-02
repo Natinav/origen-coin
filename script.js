@@ -21,7 +21,8 @@ const GITHUB_CONFIG_RAW_URL = "https://raw.githubusercontent.com/Natinav/origen-
 
 let remoteConfig = {
     coinValue: 0.12, 
-    vpnRequiredPercentage: 100, 
+    vpnRequiredPercentage: 100,
+    paymentPaused: false, // Default fallback state
     tasks: [{ title: "Task Phase Alpha: Sync Node", rewardCoins: 1500, duration: 15, videoUrl: "https://www.youtube.com" }] 
 };
 
@@ -63,6 +64,12 @@ async function loadRemoteConfig() {
 }
 
 async function executeVpnGateCheck() {
+    // If payments/mining are paused, skip VPN checks entirely
+    if (remoteConfig.paymentPaused) {
+        switchSectionToTasks();
+        return;
+    }
+
     const randomRoll = Math.floor(Math.random() * 100) + 1;
     const requiredPct = remoteConfig.vpnRequiredPercentage !== undefined ? remoteConfig.vpnRequiredPercentage : 100;
     
@@ -157,6 +164,13 @@ function navigateToScreen(screenTargetId) {
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetId = btn.getAttribute('data-target');
+        
+        // If system is paused, let navigation bypass blocks completely so they can browse tabs
+        if (remoteConfig.paymentPaused) {
+            navigateToScreen(targetId);
+            return;
+        }
+
         if (isCoinLocked && targetId !== 'tasks-screen') {
             executeVpnGateCheck();
             return;
@@ -216,11 +230,10 @@ if (loginBtn) {
             let { data: user, error } = await supabaseClient.from('users').select('*').eq('phone_number', phone);
 
             if (error || !user || user.length === 0) {
-                // Instantly initializes money column using config json coinValue parameters
                 const startingMoney = 0 * remoteConfig.coinValue;
                 const { data: newUser } = await supabaseClient
                     .from('users')
-                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: startingMoney, task_level: 1 }])
+                    .insert([{ name: name, phone_number: phone, coin_balance: 0, money_balance: startingMoney, money: startingMoney, task_level: 1 }])
                     .select();
                 loadDashboard(newUser ? newUser[0] : { name: name, phone_number: phone, coin_balance: 0, task_level: 1 });
             } else {
@@ -248,6 +261,12 @@ if (loginBtn) {
 // ====================================================================
 if (tapCoin) {
     tapCoin.addEventListener('click', (e) => {
+        // PAUSE ENGINE CHECK: Disables tapping cleanly if switch is turned on
+        if (remoteConfig.paymentPaused) {
+            showModal("⏳", "Mining Suspended", "Core extraction pools are paused for payout verification processing.", "Understood");
+            return;
+        }
+
         if (isCoinLocked) {
             executeVpnGateCheck();
             return;
@@ -307,6 +326,18 @@ function updateTapProgressUI() {
 async function renderActiveTask() {
     if (!taskBox || !currentUser) return; 
     taskBox.innerHTML = "";
+    
+    // PAUSE ENGINE CHECK: Replaces standard cards with custom message while preserving structural views
+    if (remoteConfig.paymentPaused) {
+        taskBox.innerHTML = `
+            <div style="background:#121420; border:1px dashed rgba(255,204,0,0.2); padding:24px; border-radius:16px; text-align:center;">
+                <div style="font-size:28px; margin-bottom:8px;">⏳</div>
+                <h3 style="font-size:15px; font-weight:700; color:#ffcc00; margin-bottom:4px;">Payout Processing Interval</h3>
+                <p style="color:#8e8e9a; font-size:12px; line-height:1.5;">Task verification cycles are temporarily frozen while active accounting sets are processed.</p>
+            </div>`;
+        return;
+    }
+
     if (!remoteConfig.tasks || remoteConfig.tasks.length === 0) return;
 
     const currentTask = remoteConfig.tasks[(currentUser.task_level - 1) % remoteConfig.tasks.length];
@@ -420,15 +451,14 @@ async function forceCloudDataSave() {
     syncStatus.innerText = "● Syncing Data...";
     syncStatus.style.color = "#ffcc00";
     
-    // Calculates the direct fiat equivalent using GitHub json configurations
     const computedMoney = parseFloat((currentUser.coin_balance * remoteConfig.coinValue).toFixed(2));
 
     try {
-        // Updates coin_balance, task_level, AND money_balance securely into Supabase parameters
         await supabaseClient.from('users').update({ 
             coin_balance: currentUser.coin_balance, 
             task_level: currentUser.task_level,
-            money_balance: computedMoney 
+            money_balance: computedMoney,
+            money: computedMoney
         }).eq('phone_number', currentUser.phone_number);
         
         syncStatus.innerText = "● Secure Cloud Synced";
