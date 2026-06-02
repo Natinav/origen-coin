@@ -122,39 +122,38 @@ async function executeVpnGateCheck() {
 }
 
 function switchSectionToTasks() {
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
-    
-    const taskNavBtn = document.querySelector('[data-target="tasks-screen"]');
-    if (taskNavBtn) taskNavBtn.classList.add('active');
-    
-    const tasksScreen = document.getElementById('tasks-screen');
-    if (tasksScreen) tasksScreen.classList.remove('hidden');
-
-    // Explicitly guarantee navigation visibility
-    const bottomNav = document.querySelector('.bottom-nav');
-    if (bottomNav) bottomNav.classList.remove('hidden');
-
-    renderActiveTask();
+    navigateToScreen('tasks-screen');
 }
 
-// Fixed Routing View Engine to securely preserve your navigation bar layout visibility
+// Absolute Fix: Targets screens safely while forcing the navigation container to NEVER hide
 function navigateToScreen(screenTargetId) {
+    // Un-activate all nav buttons
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
     
+    // Hide all main view screens safely 
+    document.querySelectorAll('.app-section').forEach(s => {
+        // Prevent the navigation container from being swept into the hiding operation
+        if (!s.classList.contains('bottom-nav')) {
+            s.classList.add('hidden');
+        }
+    });
+    
+    // Active the targeted bottom option highlight
     const targetNavBtn = document.querySelector(`[data-target="${screenTargetId}"]`);
     if (targetNavBtn) targetNavBtn.classList.add('active');
     
+    // Unhide the current screen section
     const targetScreen = document.getElementById(screenTargetId);
     if (targetScreen) targetScreen.classList.remove('hidden');
     
-    // ABSOLUTE FIX: Explicitly target and force show the navigation bar container on mobile viewports
+    // FORCE-PRESERVE: Explicitly double check that the navigation bar stays fully visible
     const bottomNav = document.querySelector('.bottom-nav');
     if (bottomNav) {
         bottomNav.classList.remove('hidden');
+        bottomNav.style.display = "flex"; // Hardcode standard display properties
     }
     
+    if (screenTargetId === 'tasks-screen') renderActiveTask();
     if (screenTargetId === 'leaderboard-screen') loadLeaderboard();
     if (screenTargetId === 'account-screen') updateAccountDetails();
 }
@@ -202,9 +201,12 @@ if (loginBtn) {
             appContainer.classList.remove('hidden');
             coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
             
-            // Forces initial rendering loop properties
+            // Ensure bottom navigation bar is absolutely visible upon dashboard injection
             const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav) bottomNav.classList.remove('hidden');
+            if (bottomNav) {
+                bottomNav.classList.remove('hidden');
+                bottomNav.style.display = "flex";
+            }
 
             updateTapProgressUI();
             startAutoSaveTimer();
@@ -361,7 +363,7 @@ async function renderActiveTask() {
             saveProgressLocally();
             forceCloudDataSave();
 
-            // Fire custom dynamic model redirection sequence straight into home layout structures 
+            // Fire modal flow to send user directly to 'home-screen' with navigation bars guaranteed intact
             showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed", "home-screen");
         });
     }
