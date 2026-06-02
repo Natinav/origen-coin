@@ -130,9 +130,15 @@ function switchSectionToTasks() {
     
     const tasksScreen = document.getElementById('tasks-screen');
     if (tasksScreen) tasksScreen.classList.remove('hidden');
+
+    // Explicitly guarantee navigation visibility
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) bottomNav.classList.remove('hidden');
+
     renderActiveTask();
 }
 
+// Fixed Routing View Engine to securely preserve your navigation bar layout visibility
 function navigateToScreen(screenTargetId) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
@@ -142,6 +148,12 @@ function navigateToScreen(screenTargetId) {
     
     const targetScreen = document.getElementById(screenTargetId);
     if (targetScreen) targetScreen.classList.remove('hidden');
+    
+    // ABSOLUTE FIX: Explicitly target and force show the navigation bar container on mobile viewports
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) {
+        bottomNav.classList.remove('hidden');
+    }
     
     if (screenTargetId === 'leaderboard-screen') loadLeaderboard();
     if (screenTargetId === 'account-screen') updateAccountDetails();
@@ -190,6 +202,10 @@ if (loginBtn) {
             appContainer.classList.remove('hidden');
             coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
             
+            // Forces initial rendering loop properties
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.classList.remove('hidden');
+
             updateTapProgressUI();
             startAutoSaveTimer();
             renderActiveTask();
@@ -345,7 +361,7 @@ async function renderActiveTask() {
             saveProgressLocally();
             forceCloudDataSave();
 
-            // Open confirmation modal and setup redirection parameters straight to home navigation viewport
+            // Fire custom dynamic model redirection sequence straight into home layout structures 
             showModal("🎉", "Task Certified", "Rewards added successfully. Core capacitor cleared.", "Proceed", "home-screen");
         });
     }
