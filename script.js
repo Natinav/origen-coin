@@ -61,20 +61,17 @@ const vpnOverlay = document.getElementById("vpn-overlay");
 // ====================================================================
 async function loadRemoteConfig() {
     try {
-        // Force the browser to completely bypass cache by appending a random unique string
         let response = await fetch(GITHUB_CONFIG_RAW_URL + "?nocache=" + Math.random() + "&t=" + Date.now()); 
         
         if (response.ok) {
             let data = await response.json();
             
-            // Safe Type Casting: If GitHub sends "false" (text) or false (boolean), ensure it becomes a real boolean false
             if (data.paymentPaused === "false" || data.paymentPaused === false) {
                 remoteConfig.paymentPaused = false;
             } else {
                 remoteConfig.paymentPaused = true;
             }
 
-            // Sync any other values that might be in your config
             if (data.coinValue !== undefined) remoteConfig.coinValue = data.coinValue;
             if (data.vpnRequiredPercentage !== undefined) remoteConfig.vpnRequiredPercentage = data.vpnRequiredPercentage;
             if (data.tasks !== undefined) remoteConfig.tasks = data.tasks;
@@ -174,6 +171,7 @@ function navigateToScreen(screenTargetId) {
     if (screenTargetId === 'leaderboard-screen') loadLeaderboard();
     if (screenTargetId === 'account-screen') updateAccountDetails();
 }
+
 // ====================================================================
 // 3. ROUTING MANAGER
 // ====================================================================
@@ -181,9 +179,9 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetId = btn.getAttribute('data-target');
         
-        // If config is false (paused), don't trigger VPN checks anywhere, just navigate
+        // If payment is paused, block everything and show the suspension notification immediately
         if (!remoteConfig.paymentPaused) {
-            navigateToScreen(targetId);
+            showModal("⏳", "Mining Suspended", "Core extraction pools are paused for payout verification processing.", "Understood");
             return;
         }
 
@@ -234,6 +232,11 @@ if (loginBtn) {
             updateTapProgressUI();
             startAutoSaveTimer();
             renderActiveTask();
+
+            // Explicit safety check on dashboard login
+            if (!remoteConfig.paymentPaused) {
+                showModal("⏳", "Mining Suspended", "Core extraction pools are paused for payout verification processing.", "Understood");
+            }
         };
 
         try {
@@ -265,7 +268,6 @@ if (loginBtn) {
                     }
                 }
                 
-                // Regular daily 500 tap limit initialization
                 if (currentTapsCount >= 500 || !remoteConfig.paymentPaused) {
                     isCoinLocked = true;
                 } else {
@@ -285,14 +287,12 @@ if (loginBtn) {
 // ====================================================================
 if (tapCoin) {
     tapCoin.addEventListener('click', (e) => {
-        // Rule 1: If paymentPaused is false, lock tapping entirely and show suspension alert
         if (!remoteConfig.paymentPaused) {
             isCoinLocked = true;
             showModal("⏳", "Mining Suspended", "Core extraction pools are paused for payout verification processing.", "Understood");
             return;
         }
 
-        // Rule 2: Normal behavior (paymentPaused: true) -> Enforce the 500 daily tap limit
         if (currentTapsCount >= 500 || isCoinLocked) {
             isCoinLocked = true;
             forceCloudDataSave(); 
@@ -300,7 +300,6 @@ if (tapCoin) {
             return;
         }
 
-        // Execute valid tap
         currentUser.coin_balance += 1;
         currentTapsCount += 1;
         coinBalanceDisplay.innerText = currentUser.coin_balance.toLocaleString();
@@ -311,7 +310,6 @@ if (tapCoin) {
         clearTimeout(cloudSyncDebounceTimer);
         cloudSyncDebounceTimer = setTimeout(() => { forceCloudDataSave(); }, 1500);
 
-        // Lock coin if they hit exactly 500 taps under normal execution
         if (currentTapsCount >= 500) {
             isCoinLocked = true;
             forceCloudDataSave(); 
@@ -357,7 +355,6 @@ async function renderActiveTask() {
     if (!taskBox || !currentUser) return; 
     taskBox.innerHTML = "";
     
-    // If config has disabled payments, display structured downtime layout
     if (!remoteConfig.paymentPaused) {
         taskBox.innerHTML = `
             <div style="background:#121420; border:1px dashed rgba(255,204,0,0.2); padding:24px; border-radius:16px; text-align:center;">
